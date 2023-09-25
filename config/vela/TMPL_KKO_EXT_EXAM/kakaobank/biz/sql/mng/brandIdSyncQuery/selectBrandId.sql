@@ -1,0 +1,6 @@
+SELECT
+    *
+FROM
+    M1_TEMPLATE_EXT_RCS_BRAND
+WHERE
+    BR_ID = @∫Í∑£µÂID

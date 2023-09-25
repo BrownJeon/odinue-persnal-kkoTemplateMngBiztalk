@@ -1,0 +1,7 @@
+SELECT
+    *
+FROM
+    M1_TEMPLATE_MST
+WHERE
+    CHANNEL_ID = @브랜드ID
+    AND TEMPLATE_ID = @템플릿ID

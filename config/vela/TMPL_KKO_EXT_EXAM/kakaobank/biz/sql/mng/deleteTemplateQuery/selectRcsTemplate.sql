@@ -1,0 +1,6 @@
+SELECT 
+    TM_SEQ 
+FROM 
+    M1_TEMPLATE_MST 
+WHERE 
+    TEMPLATE_ID = @∫£¿ÃΩ∫ID

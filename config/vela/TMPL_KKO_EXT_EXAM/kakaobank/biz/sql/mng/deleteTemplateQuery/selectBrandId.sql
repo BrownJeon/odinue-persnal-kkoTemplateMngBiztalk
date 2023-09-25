@@ -1,0 +1,6 @@
+SELECT
+    CHANNEL_ID 
+FROM 
+    M1_TEMPLATE_MST 
+WHERE 
+    TEMPLATE_ID = @∫£¿ÃΩ∫ID

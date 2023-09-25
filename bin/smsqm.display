@@ -1,0 +1,38 @@
+#	Foreground Colours
+#30	Black
+#31	Red
+#32	Green
+#33	Yellow
+#34	Blue
+#35	Magenta
+#36	Cyan
+#37	White
+
+#	Background Colours
+#40	Black
+#41	Red
+#42	Green
+#43	Yellow
+#44	Blue
+#45	Magenta
+#46	Cyan
+#47	White
+
+#!TITLE 34
+!HEADER 30 47
+#!MSG 30 47
+
+TMPL_REQUEST ___R
+  TMPL_DBX ___R
+
+XCN_SMS41 34 WR__
+ KTSM000001_1 WR__
+  DBX_SMS41 ___R
+
+XCN_RCS41 34 WR__
+ KTSMT00001 WR__
+ KTMMT00001 WR__
+ KTSMTR0001 WR__
+  DBX_RCS41 ___R
+XCT_ALERT
+  DBX_ALERT

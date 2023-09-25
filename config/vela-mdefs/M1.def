@@ -1,0 +1,115 @@
+
+FWXHEADER message(100) {
+	발송서버접수식별자 char(20) SeqLocal,
+	내부전문구분 char(10) FTrnCd,
+	전문버전 char(2) Ver,
+	보낸프로그램참고 char(10) Sndr,
+	거래구분 char(10) TrnCd,
+	생성일시 char(14) YmdHmsCrt,
+	오류코드 num(2) ErrCd,
+	할당발송계약식별자 char(10) TrgtCtrct,
+	-- JS:json, XM: xml , 기타: flatfile
+	전문포멧 char(2) CtntType,
+	여분 char(15) Rsrvd,
+	하위전문길이 num(5) CtntLen
+}
+
+FWXREQUEST message(330) {	
+	발송서버접수식별자 char(20) SeqLocal,
+	배치고유번호 char(20) SeqBatch,
+	발송이력식별자 char(20) SeqExtern,
+	전문ID char(36) GuidTrace,
+	업무식별자 char(10) CodeService,
+	메시지구분 char(1) CodeMsgType,
+	수신전화번호 char(16) TelnoRcv,
+	발신전화번호 char(16) TelnoSnd,
+	회신전화번호 char(16) TelnoRply,
+	요청일시 char(14) YmdHmsReq,
+	접수일시 char(14) YmdHmsRcv,
+	우선순위 char(1) Priority,
+	유효발송일중시간 char(12) AvailableBetween,
+	지정발송계약식별자 char(10) CntrctAssign,
+	메시지내용 char(124) MsgCtnt
+}
+
+FWXREQUEST_EML message(3710) {	
+	발송서버접수식별자 char(20) SeqLocal,
+	배치고유번호 char(20) SeqBatch,
+	발송이력식별자 char(20) SeqExtern,
+	전문ID char(36) GuidTrace,
+	업무식별자 char(10) CodeService,
+	메시지구분 char(1) CodeMsgType,
+	내용유형 char(60) ContentType,
+	인코딩 char(60) Encoding,
+	수신주소 char(60) AddrRcv,
+	수신주소명 char(120) AddrRcvNm,	
+	발신주소 char(60) AddrSnd,
+	발신주소명 char(120) AddrSndNm,
+	요청일시 char(14) YmdHmsReq,
+	접수일시 char(14) YmdHmsRcv,
+	우선순위 char(1) Priority,
+	유효발송일중시간 char(12) AvailableBetween,
+	지정발송계약식별자 char(10) CntrctAssign,
+	제목 char(1024) Subject,
+	내용파일들 char(2048) ContentFiles
+}
+
+FWXREQUEST_EXT_MMS message(4300) {  	
+	MMS첨부파일Base경로 char(100) MMSBasePath,
+	MMS첨부파일1상대경로 char(50) MMSFile1,
+	MMS첨부파일2상대경로 char(50) MMSFile2,
+	MMS첨부파일3상대경로 char(50) MMSFile3,
+	MMS템플릿파일상대경로 char(50) MMSTmplFile,
+	MMS메시지내용 char(4000) MMSMsgCtnt
+}
+
+FWXRESULT message(120) {
+	발송서버접수식별자 char(20) SeqLocal,
+	정산일련번호 char(20) ECalIdnfiID,
+	발송일시 char(14) YmdHmsAck,
+	결과일시 char(14) YmdHmsRslt,
+	수신일시 char(14) YmdHmsDlvry,
+	발송중계사 char(4) CoSndr,
+	발송호기 char(2) CoSndrSub,
+	이통사구분 char(3) CoTelco,
+	발송사결과구분 char(5) smsRsultTelco,
+	결과구분 char(2) smsRsultDstcd,
+	발송계약식별자 char(10) CntrctSnd,
+	예비 char(12) smsRsultApp
+}
+
+FWXREQUEST_BATCH message(4496) {
+	그룹회사코드 char(3) groupCoCd,
+	발송서버접수식별자 char(20) sendSevrRceptIdnfr,
+	업무식별자 char(10) bzIdnfr,
+	업무채널코드 char(2) bzChlCd,
+	메시지구분 char(2) msgDstCd,
+	거래일시 char(14) trnYms,
+	접수일시 char(14) rcptYms,
+	유효시간대 char(12) valdYms,
+	발송제한일시 char(14) exprYms,
+	발송이력식별자 char(20) sendPshistIdnfr,
+	업무내구분 char(3) bzSbDstCd,
+	그룹고유번호 char(10) grpIdnfr,
+	스케줄고유번호 char(10) schdlIdnfr,
+	발송우선순위구분 char(1) priOrdr,
+	관리부점코드 char(4) mgtBrncd,
+	발송부점코드 char(4) sendBrncd,
+	고객구분 char(1) custDstCd,
+	고객식별자 char(10) custIdnfr,
+	고객관리번호 char(5) custMgtNo,
+	고객명 char(40) custnm,
+	휴대폰번호 char(16) cphnNo,
+	발신처전화번호 char(16) sndrTelno,
+	발송직원번호 char(7) sendEmpid,
+	지정발송계약식별자 char(10) spcfSndCtrct,
+	거래구분 char(10) trnCd,
+	거래유입구분 char(1) trnChnlCd,
+	메시지생성단구분 char(6) msgCrtCd,
+	업무접수식별ID char(20) bzwkRceptIdnfiID,
+	결과반환여부 char(1) rsultRetunYn,
+	후처리프로그램명 char(10) afPrcssPgmName,
+	참조내용 char(100) refCtnt,
+	메시지내용 char(100) msgCtnt,
+	MMS메시지내용 char(4000) mmsCtnt
+}
