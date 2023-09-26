@@ -103,23 +103,7 @@
 			<#-- 검수요청 전문 정의 -->
 			<#local headerMap = requestDataMap.headerMap!{}/>
 			<#local payloadMap = requestDataMap.payloadMap!{}/>
-			
-			<#--  <#local headerMap = {
-					"Content-Type" : "application/json; charset=utf-8",
-					"Accept" : "application/json",
-					"siteid": "shLife1",
-					"auth_key" : "N2IzZTljNmUwMGFjMzk0NzFjMzU4ZTJmYmY1N2RjZmMwOWM2ZTM4NzIzYzYxOGY3OTMxNzllMDU2Zjc2ZjIwMQ=="
-			}/>
-			<#local payloadMap = {"senderKey":"d556109269a3158ee278ca371662efeffb081b93",
-				"templateCode":"ODI010009",
-				"templateName":"템플릿등록테스트009",
-				"templateMessageType":"BA",
-				"senderKeyType":"S",
-				"categoryCode":"001001",
-				"templateContent":"[어다인] 내부 테스트(test)\r\n전직원 공지사항",
-				"templateEmphasizeType":"NONE",
-				"buttons":[]}/>  -->
-			
+
 			<#local r = m1.log("[REQ][DO][CREATE] 템플릿검수 요청. @SEQ=[${seqLocal}] @발신프로필키=[${rcvBody.CHANNEL_ID!''}] @템플릿ID=[${rcvBody.TEMPLATE_ID!''}] @요청URL=[${requestUrl}]", "INFO")/>
 			<#local r = m1.log(headerMap, "DEBUG")/>
 			<#local r = m1.log(payloadMap, "DEBUG")/>

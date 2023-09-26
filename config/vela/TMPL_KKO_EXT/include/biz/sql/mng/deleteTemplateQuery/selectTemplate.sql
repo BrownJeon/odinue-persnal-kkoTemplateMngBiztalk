@@ -3,4 +3,4 @@ SELECT
 FROM 
     M1_TEMPLATE_MST 
 WHERE 
-    TEMPLATE_ID = @베이스ID
+    TEMPLATE_ID = @템플릿ID

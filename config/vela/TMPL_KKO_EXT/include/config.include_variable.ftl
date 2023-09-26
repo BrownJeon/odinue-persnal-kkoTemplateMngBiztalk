@@ -49,7 +49,7 @@
 </#if>
 
 <#-- HTTP객체 -->
-<#--  TODO. 비즈톡의 경우 TObjHttp객체를 사용시 에러 발생  -->
+<#--  TODO. 비즈톡의 경우 TObjHttp객체를 사용시 url parameter에 값을 넣어줄 수 없어서 body부분에 대한 값을 전달할 수 없음  -->
 <#--  <#assign httpObj = m1.shareget("httpObj")!""/>
 <#if !httpObj?has_content>
     <#assign httpObj = m1.statics["com.odinues.m1.open.template.TObjHttp"].newInstance() />
@@ -84,9 +84,6 @@
     <#assign r = m1.log(channelList,"DEBUG")/>
 
     <#assign r=m1.shareput("channelList",channelList)/>
-
-
-    <#assign r = m1.log(channelList,"INFO")/>
 </#if>
 
 
