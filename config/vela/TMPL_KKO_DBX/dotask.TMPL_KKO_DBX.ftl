@@ -142,10 +142,10 @@
 			<#return retry/>
 		</#if>
 
-		<#local r = m1.log("[DBX][SUCC] DB 처리 완료. @SEQ=[${seqLocal}] @처리결과=[${executeParamMap.검수상태!''}] @검수결과코드=[${executeParamMap.검수결과코드!''}] @검수결과내용=[${executeParamMap.처리결과내용!''}]", "INFO")/>
+		<#local r = m1.log("[DBX][SUCC] DB 처리 완료. @SEQ=[${seqLocal}] @검수결과코드=[${executeParamMap.검수결과코드!''}] @검수결과내용=[${executeParamMap.처리결과내용!''}]", "INFO")/>
 	<#else>
 		<#-- update 결과 없음 -->
-		<#local r = m1.log("[DBX][DB][ERR] 이력 update 실패. @SEQ=[${seqLocal}] @처리결과=[${executeParamMap.검수상태!''}] @검수결과코드=[${executeParamMap.검수결과코드!''}] @검수결과내용=[${executeParamMap.처리결과내용!''}]", "ERROR")/>
+		<#local r = m1.log("[DBX][DB][ERR] 이력 update 실패. @SEQ=[${seqLocal}] @검수결과코드=[${executeParamMap.검수결과코드!''}] @검수결과내용=[${executeParamMap.처리결과내용!''}]", "ERROR")/>
 
 		<#local r = sqlConn.rollback()/>
 

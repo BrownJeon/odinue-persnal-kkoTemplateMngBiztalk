@@ -4,27 +4,39 @@
 <#function taskDbxFunction_parseRequest2ExecuteParamMap _seqLocal _apiResult>
 
     <#local r = m1.log("[DBX][REQUEST] 검수요청 DB처리 전문 파싱. @SEQ=[${_seqLocal}]", "INFO")/>
-    <#local r = m1.log(_apiResult, "INFO")/>
+    <#local r = m1.log(_apiResult, "DEBUG")/>
 
 	<#local executeParamMap = m1.editable({})/>
 
-    <#local templateUseYn = ""/>
+    <#local templateUseYn = "N"/>
 
-    <#local resultCode = _apiResult.code!"9999"/>
-    <#local apiResultReason = _apiResult.message!"기타에러"/>
-    <#if resultCode == "200">
-        <#--성공-->
+    <#local resultCode = _apiResult.code!""/>
+    <#local resultReason = _apiResult.message!"기타에러"/>
+
+    <#--  API 응답전문 파싱  -->
+    <#if
+        _apiResult?has_content
+        && resultCode?has_content
+        && resultCode == "200"
+    >
+        <#--  성공건에 대한 데이터 파싱  -->
+
         <#local step = "3">
-        <#local resultStatus = "승인대기"/>
+        <#local resultReason = "승인대기"/>
 
         <#local r = executeParamMap.put("승인요청일시", ymdhms)/>
-
     <#else>
         <#--검수 요청 실패-->
+        <#if _apiResult.error?has_content>
+            <#local errorBody = _apiResult.error!{}/>
+
+            <#local resultCode = errorBody.code!"9999"/>
+            <#local resultReason = errorBody.message!"기타에러"/>
+
+        </#if>
+
         <#local step = "5">
-        <#local resultStatus = apiResultReason/>
-        <#local templateUseYn = "N"/>
-        
+
         <#local r = executeParamMap.merge({
             "승인요청일시": ymdhms
             , "처리일시": ymdhms
@@ -35,10 +47,10 @@
     <#--  검수요청 전문 추가 파싱  -->
     <#return executeParamMap.merge({
 		"SEQ": _seqLocal
-		, "처리결과내용": resultStatus
+		, "처리결과내용": resultReason
 		, "검수결과코드": resultCode
 		, "검수처리단계": step
-		, "템플릿사용여부": templateUseYn
+		, "템플릿사용여부": "N"
 	}, "true")/>
 
     <#local r = m1.log("[DBX][REQUEST] 검수요청 DB처리 전문 파싱 완료. @SEQ=[${_seqLocal}]", "INFO")/>

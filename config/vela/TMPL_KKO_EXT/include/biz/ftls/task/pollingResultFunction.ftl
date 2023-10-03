@@ -41,7 +41,16 @@
     </#if>
 
     <#-- 검수결과 header 정의 -->
-    <#local headerMap = commonFunction_getRequestHeaderMap(senderKey, {})/>
+    <#local createHeaderResponseMap = commonFunction_getRequestHeaderMap(senderKey, {})/>
+    <#local createHeaderResponseCode = createHeaderResponseMap.code/>
+
+    <#if createHeaderResponseCode != "200">
+        <#return {
+            "code": createHeaderResponseCode
+            , "message": createHeaderResponseMap.message
+        }/>
+    </#if>
+    <#local headerMap = createHeaderResponseMap.header/>
 
     <#local headerParamMap = {
         "senderKey": senderKey

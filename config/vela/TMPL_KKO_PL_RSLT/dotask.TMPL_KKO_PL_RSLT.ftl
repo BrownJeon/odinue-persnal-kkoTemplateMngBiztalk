@@ -63,11 +63,10 @@
 
 		</#list>
 
-		<#return clear/>
 	<#recover>
 		<#local r = m1.log("[RPT][POLL][ERR] 검수결과 처리중 에러발생.", "ERROR")/>
 
-		<#return retry/>
 	</#attempt>
 
+	<#return clear/>
 </#function>

@@ -12,16 +12,13 @@
 		- innerFunction_requestGetResponseMap : biz센터 GET요청 함수
 	- commonFunction_requestGet4ResultMap : biz센터 GET요청 후 결과전문 단건 파싱 함수
 	- commonFunction_getRequestHeaderMap : HTTP요청을 위한 전문헤더 생성하는 함수
-	- commonFunction_getCreateTemplateUrl : 버전정보별로 템플릿등록 API url 체크
 	- commonFunction_requestTokenInfo : 토큰 요청 함수
 	- commonFunction_parseCreateTemplatePayloadMap : 템플릿등록 전문바디 파싱
-		- innerFunction_getParseImagePayloadMap : 이미지템플릿 요청전문 파싱 (only v2 API로 요청)
-			- innerFunction_uploadImage : 이미지업로드 요청
-		- innerFunction_createTemplateId : custTmpltId 생성 함수(영문/숫자 25자 이내)
+		- innerFunction_uploadImage : 이미지업로드 요청
 	- commonFunction_kko2dbSync: biz센터 동기화처리 함수
+		- innerFunction_kkoTemplateInfoDetail2DB : 승인/승인대기 템플릿 상세내역을 조회하여 조회결과 DB처리
 		- innerFunction_formIdInfoDetail2DB: 베이스폼ID 상세내역을 조회하여 조회결과 DB처리
 		- innerFunction_commonTemplateInfoDetail2DB : 공통템플릿 상세내역을 조회하여 조회결과 DB처리
-		- innerFunction_kkoTemplateInfoDetail2DB : 승인/승인대기 템플릿 상세내역을 조회하여 조회결과 DB처리
 		- innerFunction_rcsBrandIdSimple2DB : 브랜드ID 조회된 값에 대한 정보를 DB처리
 		- innerFunction_chatbotIdDetail2DB : 챗봇ID 조회된 값에 대한 정보를 DB처리
 -->
@@ -343,6 +340,7 @@
 </#function>
 
 
+
 <#-- HTTP요청을 위한 전문헤더 생성 함수 -->
 <#function commonFunction_getRequestHeaderMap _senderKey _extraParamMap>
 
@@ -355,6 +353,11 @@
 	<#if !channelInfo?has_content>
 		<#local r = m1.log("[ERR] 발신프로필키에 매핑되는 인증정보 없음. @계정정보=", "ERROR")/>
 		<#local r = m1.log(channelList, "ERROR")/>
+
+		<#return {
+			"code": "711"
+			, "message": "발신프로필키에 매핑되는 인증정보 없음."
+		}/>
 	</#if>
 
 	<#local siteId = channelInfo.clientId!""/>
@@ -376,10 +379,13 @@
     </#list>
 
 	<#local r = m1.log("[REQ][DO] 요청전문 헤더정보 파싱완료. @발신프로필키=[${_senderKey}]", "INFO")/>
-	<#local r = m1.log(headerMap, "INFO")/>
+	<#local r = m1.log(headerMap, "DEBUG")/>
 
-
-    <#return headerMap/>
+    <#return {
+		"code": "200"
+		, "message": "성공"
+		, "header": headerMap	
+	}/>
 </#function>
 
 <#-- 토큰 요청 함수 -->
@@ -426,6 +432,7 @@
 
     <#return {
         "code": responseCode
+		, "message": "성공"
         , "accessToken": body.access_token!""
         , "expiresIn": body.expires_in!0
     }/>
@@ -438,16 +445,20 @@
 		- 필수전문 데이터 파싱 후 부가옵션 파싱 및 이미지업로드처리 데이터 파싱
 		- 버튼전문의 경우 BUTTON_INFO컬럼의 값을 체크하여 파싱.
 		
-		
 -->
 <#function commonFunction_parseCreateTemplatePayloadMap _requestMap>
 	<#if !_requestMap??>
 		<#local r = m1.log("[REQ][DO][ERR] 데이터 파싱 중 에러발생. 유입데이터 없음.", "ERROR")/>
-		<#return {}/>
+
+		<#return {
+			"code": "710"
+			, "message": "데이터 파싱 중 에러발생. 유입데이터 없음."
+		}/>
 	</#if>
 
 	<#local _seqLocal = _requestMap.TM_SEQ!""/>
 	<#local templateCode = _requestMap.TEMPLATE_ID!""/>
+	<#local senderKey = _requestMap.CHANNEL_ID!""/>
 
 	<#local r = m1.log("[REQ][DO] 요청전문 파싱시작. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "DEBUG")/>
 	<#local r = m1.log(_requestMap, "DEBUG")/>
@@ -461,11 +472,42 @@
 		<#local r = m1.log("[REQ][DO][ERR] 필수정보 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
 		<#local r = m1.log(formParam, "ERROR")/>
 
-		<#return {}/>
+		<#return {
+			"code": "710"
+			, "message": "필수정보 전문내용 데이터 파싱중 에러발생."
+		}/>
+	</#attempt>
+
+	<#--  버튼정보 파싱  -->
+	<#attempt>
+		<#local buttonInfo = m1.parseJsonValue(_requestMap.BUTTON_INFO)!{}/>
+	<#recover>
+		<#local r = m1.log("[REQ][DO][ERR] 버튼정보 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
+		<#local r = m1.log(buttonInfo, "ERROR")/>
+
+		<#return {
+			"code": "710"
+			, "message": "버튼정보 전문내용 데이터 파싱중 에러발생."
+		}/>
+	</#attempt>
+
+	<#--  부가옵션정보 파싱  -->
+	<#attempt>
+		<#--  데이터 수정을 위해 editable객체로 생성  -->
+		<#local optionInfo = m1.parseJsonValue(_requestMap.OPTION_INFO)!{}/>
+		<#--  <#local optionInfo = m1.editable(optionInfo)/>  -->
+	<#recover>
+		<#local r = m1.log("[REQ][DO][ERR] 옵션내용 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
+		<#local r = m1.log(optionInfo, "ERROR")/>
+
+		<#return {
+			"code": "710"
+			, "message": "옵션내용 전문내용 데이터 파싱중 에러발생."
+		}/>
 	</#attempt>
 
 	<#--  필수전문 데이터 파싱  -->
-	<#local r = m1.put(resultMap, "senderKey", _requestMap.CHANNEL_ID!"")/>
+	<#local r = m1.put(resultMap, "senderKey", senderKey)/>
 	<#local r = m1.put(resultMap, "templateCode", templateCode)/>
 	<#local r = m1.put(resultMap, "templateName", _requestMap.TEMPLATE_NAME!"")/>
 	<#local r = m1.put(resultMap, "templateMessageType",_requestMap.MESSAGE_TYPE!"BA")/>
@@ -477,36 +519,110 @@
 		<#local r = m1.log("[REQ][DO][ERR] 필수값 [템플릿내용] 없음. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
 		<#local r = m1.log(formParam, "ERROR")/>
 
-		<#return {}/>
+		<#return {
+			"code": "710"
+			, "message": "필수값 [템플릿내용] 없음."
+		}/>
 	</#if>
 	<#local templateEmphasizeType = formParam.templateEmphasizeType!""/>
 	<#if !templateEmphasizeType?has_content>
 		<#local r = m1.log("[REQ][DO][ERR] 필수값 [강조유형] 없음. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
 		<#local r = m1.log(formParam, "ERROR")/>
 		
-		<#return {}/>
+		<#return {
+			"code": "710"
+			, "message": "필수값 [강조유형] 없음."
+		}/>
 	<#else>
-		<#local templateImageUrl = formParam.templateImageUrl!""/>
+		<#local templateImageUrl = optionInfo.templateImageUrl!""/>
 		
-		<#if (templateEmphasizeType == "IMAGE" || templateEmphasizeType == "ITEM_LIST") && !templateImageUrl?has_content>
+		<#if (templateEmphasizeType == "IMAGE"  && templateImageUrl?has_content) || templateEmphasizeType == "ITEM_LIST">
 			<#--  템플릿 강조유형이 IMAGE / ITEM_LIST일 경우 이미지업로드처리  -->
-			<#--  TODO. 비즈톡측에 이미지업로드 기능이 미구현으로 인한 확인필요  -->
-			<#local imageParamMap = innerFunction_getParseImagePayloadMap(templateImageUrl)/>
+
+			<#if templateImageUrl?has_content>
+				<#--  이미지업로드  -->
+				<#local r = m1.log("[{TASKNAME}][UPLOAD] 이미지 업로드 처리 요청. @이미지PATH=[${templateImageUrl}]", "INFO")/>
+				<#local uploadResultMap = innerFunction_uploadImage("${tmplMngrUrl}/v1/image/alimtalk/template", senderKey, templateImageUrl)/>
+
+				<#local uploadResultCode = uploadResultMap.code!"">
+				<#if uploadResultCode == "0000">
+					<#local uploadImageUrl = uploadResultMap.uploadImageUrl!"">
+					<#local r = m1.log("[REQ][DO][IMG] 이미지업로드 성공. @SEQ=[${_seqLocal}] @이미지URL=[${uploadImageUrl}]", "INFO")/>
+
+					<#--  <#local r = optionInfo.put("templateImageUrl", uploadImageUrl)/>  -->
+					<#local optionInfo += {
+						"templateImageUrl": uploadImageUrl
+					}/>
+				<#else>
+					<#local message = uploadResultMap.message!"">
+					<#local r = m1.log("[REQ][DO][IMG] 이미지업로드 실패. @SEQ=[${_seqLocal}] @결과코드=[${uploadResultCode}] @응답결과=[${message}]", "INFO")/>
+
+
+					<#return {
+						"code": "710"
+						, "message": "이미지업로드 실패. [${message}]"
+					}/>
+				</#if>
+			</#if>
+
+			<#-- 아이템리스트형에서 하이라이트아이템 이미지업로드시 이미지업로드 처리 -->
+			<#if 
+				templateEmphasizeType == "ITEM_LIST"
+				&& optionInfo.templateItemHighlight?? 
+				&& optionInfo.templateItemHighlight.imageUrl?? 
+			>
+				<#local highlightImageUrl = optionInfo.templateItemHighlight.imageUrl/>
+				<#local r = m1.log("[{TASKNAME}][UPLOAD] 썸네일 이미지 업로드 처리 요청. @이미지PATH=[${highlightImageUrl}]", "INFO")/>
+
+				<#local highlightUploadImageResponseMap = innerFunction_uploadImage("${tmplMngrUrl}/upload/image/alimtalk/itemHighlight", senderKey, highlightImageUrl)/>
+				<#local highlightUploadImageResCode = highlightUploadImageResponseMap.code/>
+				<#local highlightUploadImageResMessage = highlightUploadImageResponseMap.message/>
+				<#local highlightUploadImageUrl = highlightUploadImageResponseMap.uploadImageUrl/>
+
+				<#if highlightImageUrl?? && highlightUploadImageResCode == "0000">
+					<#local r = m1.log("[{TASKNAME}][UPLOAD][SUCC] 썸네일이미지 업로드 성공. @응답코드=[${highlightUploadImageResCode}] @업로드이미지URL=[${highlightUploadImageUrl}] @응답메시지=[${highlightUploadImageResMessage}]", "INFO")/>
+					
+					<#--  <#local templateItemHighlightEditableMap = optionInfo.templateItemHighlight/>
+					<#local r = templateItemHighlightEditableMap.put("imageUrl", highlightUploadImageUrl)/>  -->
+					<#local optionInfo += {
+						"imageUrl": highlightUploadImageUrl
+					}/>
+
+					<#local r = optionInfo.put("templateItemHighlight", templateItemHighlightEditableMap)/>
+
+				<#else>
+					<#local r = m1.log("[{TASKNAME}][UPLOAD][FAIL] 썸네일이미지 업로드 실패. @응답코드=[${highlightUploadImageResCode}] @이미지파일경로=[${highlightImageUrl!''}] @응답메시지=[${highlightUploadImageResMessage}]", "ERROR")/>
+
+					<#-- 이미지업로드 실패처리  -->
+					<#return {
+						"code": highlightUploadImageResCode
+						, "message": highlightUploadImageResMessage!"썸네일이미지 업로드 실패"
+					}/>
+				</#if>
+
+			</#if>
+
 
 		<#elseif templateEmphasizeType == "TEXT">
-			<#local templateTitle = formParam.templateTitle!""/>
+			<#local templateTitle = optionInfo.templateTitle!""/>
 			<#if !templateTitle?has_content>
 				<#local r = m1.log("[REQ][DO][ERR] 강조유형이 'TEXT'일경우 templateTitle값 필수. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
-				<#local r = m1.log(formParam, "ERROR")/>
+				<#local r = m1.log(optionInfo, "ERROR")/>
 
-				<#return {}/>
+				<#return {
+					"code": "710"
+					, "message": "강조유형이 'TEXT'일경우 templateTitle값 필수."
+				}/>
 			</#if>
-			<#local templateSubtitle = formParam.templateSubtitle!""/>
+			<#local templateSubtitle = optionInfo.templateSubtitle!""/>
 			<#if !templateSubtitle?has_content>
 				<#local r = m1.log("[REQ][DO][ERR] 강조유형이 'TEXT'일경우 templateSubtitle값 필수. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
-				<#local r = m1.log(formParam, "ERROR")/>
+				<#local r = m1.log(optionInfo, "ERROR")/>
 
-				<#return {}/>
+				<#return {
+					"code": "710"
+					, "message": "강조유형이 'TEXT'일경우 templateSubtitle값 필수."
+				}/>
 			</#if>
 		<#else>
 
@@ -514,56 +630,111 @@
 
 	</#if>
 
+	<#--  전문바디  -->
 	<#list formParam as key, value>
 		<#local r = m1.put(resultMap, key, value)/>
 	</#list>
 
-	<#--  버튼정보 파싱  -->
-	<#attempt>
-		<#local buttonInfo = m1.parseJsonValue(_requestMap.BUTTON_INFO)!{}/>
-	<#recover>
-		<#local r = m1.log("[REQ][DO][ERR] 버튼정보 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
-		<#local r = m1.log(buttonInfo, "ERROR")/>
-
-		<#return {}/>
-	</#attempt>
+	<#--  버튼정보  -->
 	<#local r = m1.put(resultMap, "buttons", buttonInfo)/>
 
-	<#--  부가옵션정보 파싱  -->
-	<#attempt>
-		<#local optionInfo = m1.parseJsonValue(_requestMap.OPTION_INFO)!{}/>
-	<#recover>
-		<#local r = m1.log("[REQ][DO][ERR] 옵션내용 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
-		<#local r = m1.log(optionInfo, "ERROR")/>
-
-		<#return {}/>
-	</#attempt>
+	<#--  옵션정보  -->
 	<#list optionInfo as key, value>
 		<#local r = m1.put(resultMap, key, value)/>
 	</#list>
 
 	<#local r = m1.log("[REQ][DO] 데이터 파싱처리 완료. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}]", "INFO")/>
-	<#local r = m1.log(resultMap, "INFO")/>
+	<#local r = m1.log(resultMap, "DEBUG")/>
 
-	<#return resultMap/>
+	<#return {
+		"code": "200"
+		, "message": "성공"
+		, "payload": resultMap	
+	}/>
 
-</#function>
-
-
-<#--
-	이미지업로드 및 전문 파싱 함수
--->
-<#function innerFunction_getParseImagePayloadMap _messagebaseformId _requestMap>
-
-    <#return 1/>
 </#function>
 
 
 <#-- biz센터 이미지파일 업로드 요청 함수 -->
-<#function innerFunction_uploadImage _requestMap>
-	
+<#--
+	이미지형 및 아이템리스트형 이미지업로드: /v1/image/alimtalk/template
+		- 제한 사이즈 : 가로 500px 이상, 가로:세로 비율 2:1
+		- 파일형식 및 크기 : jpg, png / 최대 500KB
+	아이템리스트형 하이라이트 이미지업로드: /v1/image/alimtalk/itemHighlight
+		- 제한 사이즈 : 가로 108px 이상, 가로:세로 비율이 1:1
+		- 파일형식 및 크기 : jpg, png / 최대 500KB.
+-->
+<#function innerFunction_uploadImage _requestUploadFileUrl _senderKey _imagePath>
 
-    <#return 1/>
+	<#if !_requestUploadFileUrl?? && !_imagePath??>
+		<#local r = m1.log("[${TASKNAME}][UPLOAD][ERR] 이미지업로드 파라미터에러. 파라미터값이 없음. @업로드요청URL=[${_requestUploadFileUrl!''}] @이미지경로=[${_imagePath!''}]", "ERROR") />
+
+		<#return {
+			"code": "720"
+			, "message": "[M1] 이미지업로드 파라미터에러."
+		}/>
+	</#if>
+
+	<#local channelList = m1.shareget("channelList")/>
+	<#local channelInfo = channelList[_senderKey]!{}/>
+	<#if !channelInfo?has_content>
+		<#local r = m1.log("[ERR] 발신프로필키에 매핑되는 인증정보 없음. @계정정보=", "ERROR")/>
+		<#local r = m1.log(channelList, "ERROR")/>
+	</#if>
+
+	<#local siteId = channelInfo.clientId!""/>
+	<#local authKey = channelInfo.clientSecret!""/>
+
+	<#local fileUploadHeader = {
+		"Content-Type": "multipart/form-data; charset=utf-8",
+		"Accept": "*/*",
+		"siteid": siteId,
+		"auth_key": authKey
+	}/>
+	
+	<#local fileUploadPayloadMap = {
+		"image": _imagePath
+	}/>
+
+	<#local r = m1.log("[REQ][UPLOAD][IMG] 이미지업로드 요청. @요청URL=[${_requestUploadFileUrl}] @이미지경로=[${_imagePath}]", "DEBUG")/>
+
+	<#local imageUploadResponse = httpRequest.requestHttp(_requestUploadFileUrl, "POST", fileUploadHeader, {}, {}, fileUploadPayloadMap, true)/>
+	<#local responseCode = imageUploadResponse.getResponseCode()/>
+	
+	<#local succBody = imageUploadResponse.getBody()/>
+	<#local errBody = imageUploadResponse.getErrorBody()/>
+
+	<#if responseCode != 200 && errBody != "">
+		<#local imageUploadResponseJson = errBody/>
+	<#else>
+		<#local imageUploadResponseJson = succBody/>
+	</#if>
+
+	<#local imageUploadResponseJson = m1.parseJsonValue(imageUploadResponseJson)/>
+	
+	<#local imageUploadResCode = imageUploadResponseJson["code"]!""/>
+	<#local uploadImageUrl = imageUploadResponseJson["image"]!""/>
+
+	<#local templateImageName = _imagePath?keep_after_last("/")/>
+	<#if uploadImageUrl?? && imageUploadResCode == "0000">
+		<#local imageUploadResMessage = "성공"/>
+		<#local r = m1.log("[REQ][UPLOAD][IMG] 이미지업로드 성공.", "INFO")/>
+
+		<#return {
+			"code": imageUploadResCode
+			, "message": imageUploadResMessage
+			, "uploadImageUrl": uploadImageUrl
+			, "uploadImageName": templateImageName
+		}/>
+	<#else>
+		<#local imageUploadResMessage = imageUploadResponseJson.message!"실패"/>
+		<#local r = m1.log("[REQ][UPLOAD][IMG] 이미지업로드 실패. @결과코드=[${imageUploadResCode}] @결과내용=[${imageUploadResMessage}]", "ERROR")/>
+
+		<#return {
+			"code": "720"
+			, "message": "이미지업로드 실패. [${imageUploadResMessage}]"
+		}/>
+	</#if>
 
 </#function>
 
@@ -588,6 +759,7 @@
 		, "requestUrl": 요청 베이스URL (ex: "${tmplMngrUrl}/brand/${brandId}/messagebase")
 	}
 -->
+<#--  TODO. 구현 필요  -->
 <#function commonFunction_kko2dbSync _syncType _syncParamMap>
 	<#if !_syncParamMap?has_content>
 		<#local r = m1.log("[BIZ][SYNC][ERR] biz센터 동기화처리 파라미터 데이터 없음.", "ERROR")/>
@@ -683,7 +855,139 @@
 
 </#function>
 
+
+<#-- 승인/승인대기 템플릿 상세내역을 조회하여 조회결과 DB처리 -->
+<#function innerFunction_kkoTemplateInfoDetail2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
+	<#if !_apiResultMap?has_content>
+		<#local r = m1.log("[RCS_TMPL][SYNC][ERR] api전문 내용 없음. 승인/승인대기 템플릿 처리무시...", "ERROR")/>
+
+		<#return _procMap/>
+	</#if>
+
+	<#assign approvalResult = _apiResultMap.approvalResult!""/>
+	<#if 
+		approvalResult == "승인"
+		|| approvalResult == "승인대기"
+	>
+		<#local messagebaseId = _apiResultMap.messagebaseId!""/>
+
+		<#local r = m1.log("[RCS_TMPL][SYNC][DB][SELECT] 승인/승인대기 템플릿 적재여부 조회. @베이스ID=[${messagebaseId}]", "INFO")/>
+		<#if messagebaseId?has_content>
+			<#local selectRcsTemplateQuery = _queryMap.selectQuery>
+
+			<#local selectRcsTemplateRs = _sqlConn.query2array(selectRcsTemplateQuery, {
+				"브랜드ID": brandId
+				, "베이스ID": messagebaseId
+			})/>
+
+			<#if (selectRcsTemplateRs?size == 0)>
+				<#-- 
+					biz센터에서 조회된 베이스ID로 전문내용 조회를 위해 템플릿상세API호출
+						- 템플릿상새조회 API의 경우 api버전에 관계없이 formattedString규격으로 응답해주는 이슈로 인해서 이미지템플릿 및 api버전에 관계없이 formattedString규격으로 동기화
+				-->
+				<#local r = m1.log("[RCS_TMPL][BIZ][REQ][DETAIL][SELECT] biz센터 승인/승인대기 템플릿 상세내역 조회. @베이스ID=[${messagebaseId}]", "DEBUG")/>
+				<#assign detailApiResultMap = commonFunction_requestGet4ResultMap(_token, "${_requestUrl}/${messagebaseId}")/>
+				<#if detailApiResultMap?has_content && detailApiResultMap.formattedString?has_content>
+					<#assign formParam = detailApiResultMap.formattedString!{}/>
+				<#else>
+					<#assign formParam = {}/>
+				</#if>
+
+				<#local registerDate = detailApiResultMap.registerDate!""/>
+				<#if registerDate?has_content>
+					<#local registerDate = m1.replaceAll(registerDate, "[-T:]", "")?keep_before_last(".") />
+				</#if>
+				<#local updateDate = detailApiResultMap.updateDate!""/>
+				<#if updateDate?has_content>
+					<#local updateDate = m1.replaceAll(updateDate, "[-T:]", "")?keep_before_last(".") />
+				</#if>
+				<#local approvalDate = detailApiResultMap.approvalDate!""/>
+				<#if approvalDate?has_content>
+					<#local approvalDate = m1.replaceAll(approvalDate, "[-T:]", "")?keep_before_last(".") />
+				</#if>
+
+				<#local executeQuery = _queryMap.insertQuery>
+				
+				<#--  적재를 위한 시퀀스 채번  -->
+				<#local createSeqQuery>
+					SELECT 
+						TMPL_MNG_SEQ.nextval AS SEQ
+					FROM DUAL
+				</#local>
+				<#local seq = _sqlConn.query2array(createSeqQuery,{})[0]["SEQ"] />
+
+				<#-- BIZ 상세내역조회 값에 대해 데이터 파싱 -->
+				<#local executeParamMap = {
+					"시퀀스": seq!""
+					, "브랜드ID": brandId
+					, "베이스ID": messagebaseId
+					, "베이스타입": "tmplt"
+					, "그룹ID": detailApiResultMap.agencyId!""
+					, "템플릿폼ID": detailApiResultMap.messagebaseformId!""
+					, "템플릿명": detailApiResultMap.tmpltName!""
+					, "템플릿ID": messagebaseId?string?keep_after_last('-')
+					, "전문내용": formParam
+					, "검수상태": detailApiResultMap.status!"parse"
+					, "승인결과": detailApiResultMap.approvalResult!""
+					, "승인결과내용": detailApiResultMap.approvalReason!"성공"
+					, "상태구분": m1.decode(approvalResult, "승인", "4", "3")
+					, "등록자": detailApiResultMap.registerId!""
+					, "수정자": detailApiResultMap.updateId!""
+					, "등록일시": registerDate
+					, "승인일시": approvalDate
+					, "수정일시": updateDate
+					, "결과코드": "20000000"
+					, "템플릿사용여부": m1.decode(approvalResult, "승인", "Y", "N")
+				}/>
+
+				<#local isSucc = true/>
+
+				<#local executeQueryList = executeQuery?split("#DELIM")/>
+				<#list executeQueryList as executeQuery>
+					<#local rs = _sqlConn.execute(executeQuery, executeParamMap)/>
+					<#if (rs < 0)>
+						<#local isSucc = false/>
+
+						<#break/>
+					</#if>
+
+				</#list>
+
+				<#if isSucc>
+				
+					<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][SUCC] 승인/승인대기 템플릿 동기화 DB처리 성공. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "INFO")/>
+
+					<#local r = _procMap.put("insertCnt", _procMap.insertCnt + 1)/>
+
+					<#assign r = _sqlConn.commit()/>
+
+				<#else>
+					<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][FAIL] 승인/승인대기 템플릿 동기화 DB처리 실패. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "ERROR")/>
+
+					<#local r = _procMap.put("failCnt", _procMap.failCnt + 1)/>
+				</#if>
+
+			<#else>
+				<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][PASS] 등록된 템플릿으로 인한 DB처리 무시. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "INFO")/>
+
+				<#local r = _procMap.put("passCnt", _procMap.passCnt + 1)/>
+
+			</#if>
+
+		<#else>
+			<#local r = m1.log("[RCS_TMPL][SYNC][REQ][ERR] biz센터 승인/승인대기 템플릿 조회결과 없음.", "ERROR")/>
+			<#local r = _procMap.put("passCnt", _procMap.passCnt + 1)/>
+		</#if>
+	<#else>
+		<#-- 승인/승인대기가 아닌 건의 경우 DB처리 제외 -->
+	</#if>
+
+
+	<#return _procMap/>
+</#function>
+
 <#-- 브랜드ID 조회된 값에 대한 기본정보를 DB처리: 상세내역을 DB처리하는 것은 우선 보류 -->
+
 <#function innerFunction_rcsBrandIdSimple2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
 	<#if !_apiResultMap?has_content>
 		<#local r = m1.log("[BRAND_ID][SYNC][ERR] api전문 내용 없음. 브랜드ID 템플릿 처리무시...", "ERROR")/>
@@ -771,6 +1075,7 @@
 </#function>
 
 <#-- 챗봇ID 조회된 값에 대한 정보를 DB처리. DB에 데이터가 있으면 update, 데이터가 없다면 insert -->
+<#--  TODO. 구현필요  -->
 <#function innerFunction_chatbotIdDetail2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
 	<#if !_apiResultMap?has_content>
 		<#local r = m1.log("[CHATBOT_ID][SYNC][ERR] api전문 내용 없음. 챗봇ID 템플릿 처리무시...", "ERROR")/>
@@ -862,6 +1167,7 @@
 </#function>
 
 <#-- 베이스폼ID 상세내역을 조회하여 조회결과 DB처리 -->
+<#--  TODO. 구현필요  -->
 <#function innerFunction_formIdInfoDetail2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
 	<#if !_apiResultMap?has_content>
 		<#local r = m1.log("[FORM_ID][SYNC][ERR] api전문 내용 없음. 베이스폼ID 템플릿 처리무시...", "ERROR")/>
@@ -966,6 +1272,7 @@
 </#function>
 
 <#-- 공통템플릿 상세내역을 조회하여 조회결과 DB처리 -->
+<#--  TODO. 구현필요  -->
 <#function innerFunction_commonTemplateInfoDetail2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
 	<#if !_apiResultMap?has_content>
 		<#local r = m1.log("[COMMON_TMPL][SYNC][ERR] api전문 내용 없음. 공통템플릿 템플릿 처리무시...", "ERROR")/>
@@ -1092,137 +1399,6 @@
 		<#local r = m1.log("[COMMON_TMPL][SYNC][REQ][ERR] biz센터 공통템플릿 조회결과 없음.", "ERROR")/>
 		<#local r = _procMap.put("passCnt", _procMap.passCnt + 1)/>
 	</#if>
-
-	<#return _procMap/>
-</#function>
-
-<#-- 승인/승인대기 템플릿 상세내역을 조회하여 조회결과 DB처리 -->
-<#function innerFunction_kkoTemplateInfoDetail2DB _sqlConn, _token, _queryMap, _apiResultMap, _requestUrl, _procMap>
-	<#if !_apiResultMap?has_content>
-		<#local r = m1.log("[RCS_TMPL][SYNC][ERR] api전문 내용 없음. 승인/승인대기 템플릿 처리무시...", "ERROR")/>
-
-		<#return _procMap/>
-	</#if>
-
-	<#assign approvalResult = _apiResultMap.approvalResult!""/>
-	<#if 
-		approvalResult == "승인"
-		|| approvalResult == "승인대기"
-	>
-		<#local messagebaseId = _apiResultMap.messagebaseId!""/>
-
-		<#local r = m1.log("[RCS_TMPL][SYNC][DB][SELECT] 승인/승인대기 템플릿 적재여부 조회. @베이스ID=[${messagebaseId}]", "INFO")/>
-		<#if messagebaseId?has_content>
-			<#local selectRcsTemplateQuery = _queryMap.selectQuery>
-
-			<#local selectRcsTemplateRs = _sqlConn.query2array(selectRcsTemplateQuery, {
-				"브랜드ID": brandId
-				, "베이스ID": messagebaseId
-			})/>
-
-			<#if (selectRcsTemplateRs?size == 0)>
-				<#-- 
-					biz센터에서 조회된 베이스ID로 전문내용 조회를 위해 템플릿상세API호출
-						- 템플릿상새조회 API의 경우 api버전에 관계없이 formattedString규격으로 응답해주는 이슈로 인해서 이미지템플릿 및 api버전에 관계없이 formattedString규격으로 동기화
-				-->
-				<#local r = m1.log("[RCS_TMPL][BIZ][REQ][DETAIL][SELECT] biz센터 승인/승인대기 템플릿 상세내역 조회. @베이스ID=[${messagebaseId}]", "DEBUG")/>
-				<#assign detailApiResultMap = commonFunction_requestGet4ResultMap(_token, "${_requestUrl}/${messagebaseId}")/>
-				<#if detailApiResultMap?has_content && detailApiResultMap.formattedString?has_content>
-					<#assign formParam = detailApiResultMap.formattedString!{}/>
-				<#else>
-					<#assign formParam = {}/>
-				</#if>
-
-				<#local registerDate = detailApiResultMap.registerDate!""/>
-				<#if registerDate?has_content>
-					<#local registerDate = m1.replaceAll(registerDate, "[-T:]", "")?keep_before_last(".") />
-				</#if>
-				<#local updateDate = detailApiResultMap.updateDate!""/>
-				<#if updateDate?has_content>
-					<#local updateDate = m1.replaceAll(updateDate, "[-T:]", "")?keep_before_last(".") />
-				</#if>
-				<#local approvalDate = detailApiResultMap.approvalDate!""/>
-				<#if approvalDate?has_content>
-					<#local approvalDate = m1.replaceAll(approvalDate, "[-T:]", "")?keep_before_last(".") />
-				</#if>
-
-				<#local executeQuery = _queryMap.insertQuery>
-				
-				<#--  적재를 위한 시퀀스 채번  -->
-				<#local createSeqQuery>
-					SELECT 
-						TMPL_MNG_SEQ.nextval AS SEQ
-					FROM DUAL
-				</#local>
-				<#local seq = _sqlConn.query2array(createSeqQuery,{})[0]["SEQ"] />
-
-				<#-- BIZ 상세내역조회 값에 대해 데이터 파싱 -->
-				<#local executeParamMap = {
-					"시퀀스": seq!""
-					, "브랜드ID": brandId
-					, "베이스ID": messagebaseId
-					, "베이스타입": "tmplt"
-					, "그룹ID": detailApiResultMap.agencyId!""
-					, "템플릿폼ID": detailApiResultMap.messagebaseformId!""
-					, "템플릿명": detailApiResultMap.tmpltName!""
-					, "템플릿ID": messagebaseId?string?keep_after_last('-')
-					, "전문내용": formParam
-					, "검수상태": detailApiResultMap.status!"parse"
-					, "승인결과": detailApiResultMap.approvalResult!""
-					, "승인결과내용": detailApiResultMap.approvalReason!"성공"
-					, "상태구분": m1.decode(approvalResult, "승인", "4", "3")
-					, "등록자": detailApiResultMap.registerId!""
-					, "수정자": detailApiResultMap.updateId!""
-					, "등록일시": registerDate
-					, "승인일시": approvalDate
-					, "수정일시": updateDate
-					, "결과코드": "20000000"
-					, "템플릿사용여부": m1.decode(approvalResult, "승인", "Y", "N")
-				}/>
-
-				<#local isSucc = true/>
-
-				<#local executeQueryList = executeQuery?split("#DELIM")/>
-				<#list executeQueryList as executeQuery>
-					<#local rs = _sqlConn.execute(executeQuery, executeParamMap)/>
-					<#if (rs < 0)>
-						<#local isSucc = false/>
-
-						<#break/>
-					</#if>
-
-				</#list>
-
-
-				<#if isSucc>
-				
-					<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][SUCC] 승인/승인대기 템플릿 동기화 DB처리 성공. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "INFO")/>
-
-					<#local r = _procMap.put("insertCnt", _procMap.insertCnt + 1)/>
-
-					<#assign r = _sqlConn.commit()/>
-
-				<#else>
-					<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][FAIL] 승인/승인대기 템플릿 동기화 DB처리 실패. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "ERROR")/>
-
-					<#local r = _procMap.put("failCnt", _procMap.failCnt + 1)/>
-				</#if>
-
-			<#else>
-				<#assign r = m1.log("[RCS_TMPL][SYNC][INSERT][PASS] 등록된 템플릿으로 인한 DB처리 무시. @브랜드ID=[${brandId}] @베이스ID=[${messagebaseId}]", "INFO")/>
-
-				<#local r = _procMap.put("passCnt", _procMap.passCnt + 1)/>
-
-			</#if>
-
-		<#else>
-			<#local r = m1.log("[RCS_TMPL][SYNC][REQ][ERR] biz센터 승인/승인대기 템플릿 조회결과 없음.", "ERROR")/>
-			<#local r = _procMap.put("passCnt", _procMap.passCnt + 1)/>
-		</#if>
-	<#else>
-		<#-- 승인/승인대기가 아닌 건의 경우 DB처리 제외 -->
-	</#if>
-
 
 	<#return _procMap/>
 </#function>

@@ -34,13 +34,31 @@
 
     <#-- 검수요청 payload 정의 -->
     <#-- 요청전문 파싱 실패시 빈값처리 -->
-    <#local payloadMap = commonFunction_parseCreateTemplatePayloadMap(_rcvBody)/>
+    <#local createPayloadResponseMap = commonFunction_parseCreateTemplatePayloadMap(_rcvBody)/>
+    <#local createPayloadResponseCode = createPayloadResponseMap.code/>
+    <#if createPayloadResponseCode != "200">
+        <#return {
+            "code": createPayloadResponseCode
+            , "message": createPayloadResponseMap.message
+        }/>
+    </#if>
+    <#local payloadMap = createPayloadResponseMap.payload/>
 
     <#-- 검수요청 header 정의 -->
-    <#local headerMap = commonFunction_getRequestHeaderMap(senderKey, {})/>
+    <#local createHeaderResponseMap = commonFunction_getRequestHeaderMap(senderKey, {})/>
+    <#local createHeaderResponseCode = createHeaderResponseMap.code/>
+
+    <#if createHeaderResponseCode != "200">
+        <#return {
+            "code": createHeaderResponseCode
+            , "message": createHeaderResponseMap.message
+        }/>
+    </#if>
+    <#local headerMap = createHeaderResponseMap.header/>
 
     <#return {
-        "headerMap": headerMap
+        "code": "200"
+        , "headerMap": headerMap
         , "payloadMap": payloadMap
     }/>
 

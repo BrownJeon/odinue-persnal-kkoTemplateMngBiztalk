@@ -56,6 +56,7 @@
             <#break/>
         <#else>
 
+            <#--  발신프로필키정보 세팅  -->
             <#assign clientInfoMap = commonFunction_getClientInfo(profileKeyInfo, authInfo)/>
 
             <#assign r = profileKeyInfoMap.put(profileKey, clientInfoMap)/>

@@ -3,9 +3,9 @@
 <#--  TASK 사용 함수  -->
 <#include "../TMPL_KKO_EXT/include/biz/ftls/task/doRequestFunction.ftl"/>
 
-<#assign httpRequest = m1.shareget("httpRequest")/>
+<#--  <#assign httpRequest = m1.shareget("httpRequest")/>
 
-<#assign tmplMngrUrl = m1.shareget("tmplMngrUrl")/>
+<#assign tmplMngrUrl = m1.shareget("tmplMngrUrl")/>  -->
 
 <#assign dbxFileQueueName = m1.shareget("dbxFileQueueName")/>
 <#assign fileQueueObj = m1.shareget("fileQueueObj")/>
@@ -49,20 +49,19 @@
 
 		<#--  검수요청 전문 파싱 함수  -->
 		<#local requestDataMap = taskDoRequestFunction_parseRequestData(seqLocal, rcvBody)/>
-		<#if 
-			!requestDataMap?has_content 
-			|| (!requestDataMap.headerMap?has_content || !requestDataMap.payloadMap?has_content)
-		>
-			<#local r = m1.log("[REQ][DO][ERR] @유입전문=[${received?string}]", "ERROR")/>
+		<#local rsCode = requestDataMap.code/>
+		<#if rsCode != "200">
+			<#local r = m1.log("[REQ][DO][ERR] 검수요청 전문 파싱 중 에러. @SEQ=[${seqLocal}] @유입전문=", "ERROR")/>
+			<#local r = m1.log(received?string, "ERROR")/>
 			
 			<#local isSucc = false/>
 
 			<#-- 실패처리  -->
 			<#local rs = commonFunction_error2writeFileQ(
 				fileQueueObj
-				,rcvHeader.발송서버접수식별자!""
-				, "501"
-				, "[M1] 템플릿등록처리 중 검수요청 전문 파싱 에러 발생."
+				, seqLocal
+				, rsCode
+				, requestDataMap.message!"[M1] 템플릿등록처리 중 검수요청 전문 파싱 에러 발생."
 				, "DO_REQ"
 				, dbxFileQueueName
 			)/>
@@ -85,7 +84,7 @@
 		<#-- 실패처리  -->
 		<#local rs = commonFunction_error2writeFileQ(
 			fileQueueObj
-			,rcvHeader.발송서버접수식별자!""
+			, seqLocal
 			, "501"
 			, "[M1] 템플릿등록처리 중 데이터 파싱 에러 발생. @에러메시지=[${errorMsg}]"
 			, "DO_REQ"
@@ -105,11 +104,11 @@
 			<#local payloadMap = requestDataMap.payloadMap!{}/>
 
 			<#local r = m1.log("[REQ][DO][CREATE] 템플릿검수 요청. @SEQ=[${seqLocal}] @발신프로필키=[${rcvBody.CHANNEL_ID!''}] @템플릿ID=[${rcvBody.TEMPLATE_ID!''}] @요청URL=[${requestUrl}]", "INFO")/>
-			<#local r = m1.log(headerMap, "DEBUG")/>
-			<#local r = m1.log(payloadMap, "DEBUG")/>
+			<#local r = m1.log(headerMap, "INFO")/>
+			<#local r = m1.log(payloadMap, "INFO")/>
 
 			<#--  비즈톡의 경우 POST -->
-			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, payloadMap, {}, {})/>
+			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, payloadMap, {}, {}, false)/>
 
 			<#assign responseCode = httpResponse.getResponseCode()/>
 			<#assign succBody = httpResponse.getBody()/>
@@ -120,6 +119,8 @@
 			<#else>
 				<#assign httpResponseBody = succBody/>
 			</#if>
+
+			<#--  <#local httpResponseBody = m1.parseJsonValue(httpResponseBody)/>  -->
 
 			<#--  RBC에서 응답받은 전문을 파싱  -->
 			<#local values = taskDoRequestFunction_parseResponseData(seqLocal, payloadMap, httpResponseBody)/>
@@ -147,7 +148,7 @@
 			<#-- 실패처리  -->
 			<#local rs = commonFunction_error2writeFileQ(
 				fileQueueObj
-				, rcvHeader.발송서버접수식별자!""
+				, seqLocal
 				, "501"
 				, "[M1]템플릿등록처리 중 에러. @에러메시지=[${errorMsg}]"
 				, "DO_REQ"
