@@ -3,5 +3,5 @@ SELECT
 FROM
     M1_TEMPLATE_MST
 WHERE
-    CHANNEL_ID = @브랜드ID
+    CHANNEL_ID = @발신프로필키
     AND TEMPLATE_ID = @템플릿ID
