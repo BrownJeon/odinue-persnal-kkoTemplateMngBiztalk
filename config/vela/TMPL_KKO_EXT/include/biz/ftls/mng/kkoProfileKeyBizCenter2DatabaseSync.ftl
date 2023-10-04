@@ -13,12 +13,12 @@
 
 <#assign sqlConn = m1.new("sql")/>
 
-<#assign r = m1.log("[CONF][PROFILE_KEY][SYNC][START] 발신프로필키 동기화처리 시작.", "INFO")/>
+<#assign r = m1.log("[CONF][CHANNEL_ID][SYNC][START] 발신프로필키 동기화처리 시작.", "INFO")/>
 
 <#--  API-KEY 정보를 가져다가 발신프로필키 목록 세팅  -->
 <#assign clientInfoList = m1.shareget("clientInfoList")![]/>
 <#if !clientInfoList?has_content>
-    <#assign r = m1.log("[CONF][PROFILE_KEY][ERR] API-KEY정보 없음.... 처리 종료.", "ERROR")/>
+    <#assign r = m1.log("[CONF][CHANNEL_ID][ERR] API-KEY정보 없음.... 처리 종료.", "ERROR")/>
 
 <#else>
     <#list clientInfoList as clientInfo>
@@ -47,13 +47,13 @@
                 }/>
 
                 <#--  RBC센터 베이스ID조회  -->
-                <#assign resultMap = commonFunction_rbc2dbSync("PROFILE_KEY", profileKeySyncParamMap)/>
+                <#assign resultMap = commonFunction_kko2dbSync("CHANNEL_ID", profileKeySyncParamMap)/>
 
                 <#if resultMap?has_content && resultMap.code == "200">
-                    <#assign r = m1.log("[CONF][PROFILE_KEY][SYNC][SUCC] 발신프로필키 동기화 성공.", "INFO")/>
+                    <#assign r = m1.log("[CONF][CHANNEL_ID][SYNC][SUCC] 발신프로필키 동기화 성공.", "INFO")/>
 
                 <#else>
-                    <#assign r = m1.log("[CONF][PROFILE_KEY][SYNC][FAIL] 발신프로필키 동기화 실패.", "ERROR")/>
+                    <#assign r = m1.log("[CONF][CHANNEL_ID][SYNC][FAIL] 발신프로필키 동기화 실패.", "ERROR")/>
 
                 </#if>
 

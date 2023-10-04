@@ -815,7 +815,7 @@
 					<#list BizSearchApiResultList as BizSearchApiResult>
 						<#-- BIZ에서 조회된 베이스폼ID 목록을 돌며 상세내역 api조회하여 DB에 동기화처리 -->
 						<#switch _syncType?upper_case>
-							<#case "PROFILE_KEY">
+							<#case "CHANNEL_ID">
 								<#--  발신프로필키 동기화 DB처리  -->
 								<#local procMap = innerFunction_formIdInfoDetail2DB(sqlConn, token, queryMap, BizSearchApiResult, requestBaseUrl, procMap)/>
 								<#break>

@@ -26,25 +26,25 @@
 <#assign profileKeyInfoMap = m1.editable({})/>
 
 <#--  발신프로필정보를 조회하여 인증에 필요한 정보 세팅  -->
-<#assign r = m1.log("[INIT][PROFILE_KEY] 발신프로필정보 DB조회.", "INFO")/>
+<#assign r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 DB조회.", "INFO")/>
 
 <#assign profileKeyInfoRs = sqlConn.query2array(selecProfileKeyInfoQuery, {})/>
 <#if (profileKeyInfoRs?size > 0)>
     <#list profileKeyInfoRs as profileKeyInfo>
         <#if !profileKeyInfo?has_content>
-            <#assign r = m1.log("[INIT][PROFILE_KEY][ERR] 조회된 데이터 없음.", "ERROR")/>
+            <#assign r = m1.log("[INIT][CHANNEL_ID][ERR] 조회된 데이터 없음.", "ERROR")/>
         </#if>
         
-        <#assign profileKey = profileKeyInfo["PROFILE_KEY"]/>
+        <#assign profileKey = profileKeyInfo["CHANNEL_ID"]/>
 
         <#assign expireYn = profileKeyInfo["EXPIRE_YN"]!"N"/>
         <#if expireYn?has_content && expireYn?upper_case == "Y">
-            <#assign r = m1.log("[INIT][PROFILE_KEY][EXPIRED] 차단상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
+            <#assign r = m1.log("[INIT][CHANNEL_ID][EXPIRED] 차단상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
             <#break/>
         </#if>
         <#assign rejectYn = profileKeyInfo["REJECT_YN"]!"N"/>
         <#if  rejectYn?has_content && rejectYn?upper_case == "Y">
-            <#assign r = m1.log("[INIT][PROFILE_KEY][REJECT] 휴면상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
+            <#assign r = m1.log("[INIT][CHANNEL_ID][REJECT] 휴면상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
             <#break/>
         </#if>
 
@@ -65,11 +65,11 @@
 
     </#list>
 
-    <#assign r = m1.log("[INIT][PROFILE_KEY] 발신프로필정보 세팅 완료. ", "INFO")/>
+    <#assign r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 세팅 완료. ", "INFO")/>
     <#assign r = m1.log(m1.toJsonBytes(profileKeyInfoMap), "DEBUG")/>
 
 <#else>
-    <#assign r = m1.log("[INIT][PROFILE_KEY] 발신프로필정보 없음.", "INFO")/>
+    <#assign r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 없음.", "INFO")/>
 
 </#if>
 

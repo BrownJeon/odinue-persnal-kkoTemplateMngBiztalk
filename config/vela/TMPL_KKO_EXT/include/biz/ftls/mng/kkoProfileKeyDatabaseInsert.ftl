@@ -5,33 +5,33 @@
 
 <#-- 발신프로필정보 정의 -->
 <#assign channelId = m1.sysenv["CHANNEL_ID"]/>
-<#assign profileKey = m1.sysenv["PROFILE_KEY"]/>
+<#assign channelInfo = m1.sysenv["CHANNEL_INFO"]/>
 <#assign categoryCode = m1.sysenv["CATEGORY_CODE"]/>
 <#assign channelKey = m1.sysenv["CHANNEL_KEY"]/>
 
 <#assign r = m1.log("[INIT][START] 발신프로필정보 DB처리 시작.", "INFO")/>
 
-<#if !channelId?has_content && !profileKey?has_content>
-    <#assign r = m1.log("[INIT][ERR] 발신프로필정보 없음.", "ERROR")/>
+<#if !channelId?has_content && !channelInfo?has_content>
+    <#assign r = m1.log("[INIT][ERR] 발신프로필정보 없음. @발신프로필키=[${channelId}] @채널정보=[${channelInfo}]", "ERROR")/>
 
 <#else>
     <#assign sqlConn = m1.new("sql")/>
 
     <#assign paramMap = {
-        "채널ID": channelId
-        , "발신프로필키": profileKey
+        "발신프로필키": channelId
+        , "채널정보": channelInfo
         , "카테고리코드": categoryCode
         , "결과수신채널": channelKey
     }/>
 
-    <#assign r = m1.log("[INIT][DB][SELECT] 발신프로필정보 DB조회. @발신프로필크=[${profileKey}] @채널ID=[${channelId}]", "INFO")/>
+    <#assign r = m1.log("[INIT][DB][SELECT] 발신프로필정보 DB조회. @발신프로필키=[${channelId}] @채널정보=[${channelInfo}]", "INFO")/>
 
     <#assign selectprofileKeyQuery = m1.loadText("../../sql/mng/profileKeySyncQuery/selectProfileKey.sql")!""/>
     <#assign selectRs = sqlConn.query2array(selectprofileKeyQuery, paramMap)/>
     <#if !selectRs?has_content>
         <#assign insertProfileKeyQuery = m1.loadText("../../sql/mng/profileKeySyncQuery/insertProfileKey.sql")!""/>
 
-        <#assign r = m1.log("[INIT][DB][INSERT] 발신프로필정보 DB처리 시작. @profileKey=[${profileKey}] @채널ID=[${channelId}]", "INFO")/>
+        <#assign r = m1.log("[INIT][DB][INSERT] 발신프로필정보 DB처리 시작. @발신프로필키=[${channelId}] @채널정보=[${channelInfo}]", "INFO")/>
 
         <#assign rs = sqlConn.execute(insertProfileKeyQuery, paramMap)/>
 
