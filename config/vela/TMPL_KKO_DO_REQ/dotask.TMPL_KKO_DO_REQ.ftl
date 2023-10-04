@@ -3,10 +3,6 @@
 <#--  TASK 사용 함수  -->
 <#include "../TMPL_KKO_EXT/include/biz/ftls/task/doRequestFunction.ftl"/>
 
-<#--  <#assign httpRequest = m1.shareget("httpRequest")/>
-
-<#assign tmplMngrUrl = m1.shareget("tmplMngrUrl")/>  -->
-
 <#assign dbxFileQueueName = m1.shareget("dbxFileQueueName")/>
 <#assign fileQueueObj = m1.shareget("fileQueueObj")/>
 
@@ -107,7 +103,10 @@
 			<#local r = m1.log(headerMap, "INFO")/>
 			<#local r = m1.log(payloadMap, "INFO")/>
 
-			<#--  비즈톡의 경우 POST -->
+			<#--
+				비즈톡의 경우 POST메서드 요청
+				- body부분의 경우 urlEncoding으로 parameter를 전달해야 정상적으로 처리 됨.
+			-->
 			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, {}, payloadMap, {}, false)/>
 
 			<#assign responseCode = httpResponse.getResponseCode()/>
@@ -119,8 +118,6 @@
 			<#else>
 				<#assign httpResponseBody = succBody/>
 			</#if>
-
-			<#--  <#local httpResponseBody = m1.parseJsonValue(httpResponseBody)/>  -->
 
 			<#--  RBC에서 응답받은 전문을 파싱  -->
 			<#local values = taskDoRequestFunction_parseResponseData(seqLocal, payloadMap, httpResponseBody)/>

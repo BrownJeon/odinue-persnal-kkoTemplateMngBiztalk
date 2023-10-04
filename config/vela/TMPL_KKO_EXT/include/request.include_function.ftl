@@ -495,7 +495,6 @@
 	<#attempt>
 		<#--  데이터 수정을 위해 editable객체로 생성  -->
 		<#local optionInfo = m1.parseJsonValue(_requestMap.OPTION_INFO)!{}/>
-		<#--  <#local optionInfo = m1.editable(optionInfo)/>  -->
 	<#recover>
 		<#local r = m1.log("[REQ][DO][ERR] 옵션내용 전문내용 데이터 파싱중 에러발생. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}] @전문내용=", "ERROR")/>
 		<#local r = m1.log(optionInfo, "ERROR")/>
@@ -549,7 +548,6 @@
 					<#local uploadImageUrl = uploadResultMap.uploadImageUrl!"">
 					<#local r = m1.log("[REQ][DO][IMG] 이미지업로드 성공. @SEQ=[${_seqLocal}] @이미지URL=[${uploadImageUrl}]", "INFO")/>
 
-					<#--  <#local r = optionInfo.put("templateImageUrl", uploadImageUrl)/>  -->
 					<#local optionInfo += {
 						"templateImageUrl": uploadImageUrl
 					}/>
@@ -574,7 +572,7 @@
 				<#local highlightImageUrl = optionInfo.templateItemHighlight.imageUrl/>
 				<#local r = m1.log("[{TASKNAME}][UPLOAD] 썸네일 이미지 업로드 처리 요청. @이미지PATH=[${highlightImageUrl}]", "INFO")/>
 
-				<#local highlightUploadImageResponseMap = innerFunction_uploadImage("${tmplMngrUrl}/upload/image/alimtalk/itemHighlight", senderKey, highlightImageUrl)/>
+				<#local highlightUploadImageResponseMap = innerFunction_uploadImage("${tmplMngrUrl}/v1/image/alimtalk/itemHighlight", senderKey, highlightImageUrl)/>
 				<#local highlightUploadImageResCode = highlightUploadImageResponseMap.code/>
 				<#local highlightUploadImageResMessage = highlightUploadImageResponseMap.message/>
 				<#local highlightUploadImageUrl = highlightUploadImageResponseMap.uploadImageUrl/>
@@ -582,13 +580,14 @@
 				<#if highlightImageUrl?? && highlightUploadImageResCode == "0000">
 					<#local r = m1.log("[{TASKNAME}][UPLOAD][SUCC] 썸네일이미지 업로드 성공. @응답코드=[${highlightUploadImageResCode}] @업로드이미지URL=[${highlightUploadImageUrl}] @응답메시지=[${highlightUploadImageResMessage}]", "INFO")/>
 					
-					<#--  <#local templateItemHighlightEditableMap = optionInfo.templateItemHighlight/>
-					<#local r = templateItemHighlightEditableMap.put("imageUrl", highlightUploadImageUrl)/>  -->
-					<#local optionInfo += {
+					<#local templateItemHighlightMap = optionInfo.templateItemHighlight/>
+					<#local templateItemHighlightMap += {
 						"imageUrl": highlightUploadImageUrl
 					}/>
 
-					<#local r = optionInfo.put("templateItemHighlight", templateItemHighlightEditableMap)/>
+					<#local optionInfo += {
+						"templateItemHighlight": templateItemHighlightMap
+					}/>
 
 				<#else>
 					<#local r = m1.log("[{TASKNAME}][UPLOAD][FAIL] 썸네일이미지 업로드 실패. @응답코드=[${highlightUploadImageResCode}] @이미지파일경로=[${highlightImageUrl!''}] @응답메시지=[${highlightUploadImageResMessage}]", "ERROR")/>
@@ -636,11 +635,36 @@
 	</#list>
 
 	<#--  버튼정보  -->
-	<#local r = m1.put(resultMap, "buttons", buttonInfo)/>
+	<#list buttonInfo as key, value>
+		<#--  
+			value가 array형식이며 각 배열의 인덱스가 json형식이라면 해당 값을 stringfy하여 넣어줌  
+			- editable객체를 사용할 경우 http요청시 타입에 대한 UnsupportedOperationException(Operation supported only on TemplateHashModelEx) 발생.
+		-->
+		<#if value?is_enumerable>
+			<#local valueArr = []/>
+			<#list value as row>
+				<#if row?is_hash && row?is_hash_ex>
+					<#local rowStr = m1.toJsonBytes(row)?string/>
+					<#local valueArr = valueArr + [rowStr]/>
+				</#if>
+			</#list>
+		<#else>
+			<#local valueArr = []/>
+		</#if>
+		<#local r = m1.put(resultMap, key, valueArr)/>
+	</#list>
 
 	<#--  옵션정보  -->
 	<#list optionInfo as key, value>
-		<#local r = m1.put(resultMap, key, value)/>
+		<#--  옵션전문에 API요청시 객체형태로 요청할때 stringfy하여 요청해야하는 이슈로 인해서 value를 체크하여 json형식의 경우에는 stringfy해서 넣어줌  -->
+		<#if value?is_hash && value?is_hash_ex>
+			<#local valueStr = m1.toJsonBytes(value)?string/>
+			<#local r = m1.log("해시이면 stringfy해서 넣기 @변환값=[${valueStr}]", "INFO")/>
+		<#else>
+			<#local valueStr = value/>
+
+		</#if>
+		<#local r = m1.put(resultMap, key, valueStr)/>
 	</#list>
 
 	<#local r = m1.log("[REQ][DO] 데이터 파싱처리 완료. @SEQ=[${_seqLocal}] @템플릿ID=[${templateCode}]", "INFO")/>
