@@ -1,0 +1,6 @@
+SELECT
+    *
+FROM
+    M1_TEMPLATE_EXT_KKO_AUTH
+WHERE
+    CHANNEL_ID = @발신프로필키

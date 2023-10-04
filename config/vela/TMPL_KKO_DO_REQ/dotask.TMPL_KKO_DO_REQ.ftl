@@ -108,7 +108,7 @@
 			<#local r = m1.log(payloadMap, "INFO")/>
 
 			<#--  비즈톡의 경우 POST -->
-			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, payloadMap, {}, {}, false)/>
+			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, {}, payloadMap, {}, false)/>
 
 			<#assign responseCode = httpResponse.getResponseCode()/>
 			<#assign succBody = httpResponse.getBody()/>

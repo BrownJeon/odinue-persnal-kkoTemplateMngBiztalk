@@ -1,6 +1,0 @@
-SELECT 
-    * 
-FROM 
-    M1_TEMPLATE_EXT_RCS_CHATBOT
-WHERE
-    CHATBOT_ID = @Ãªº¿ID
