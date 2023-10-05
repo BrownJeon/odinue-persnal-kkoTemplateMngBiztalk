@@ -6,7 +6,6 @@
 <#assign dbxFileQueueName = m1.shareget("dbxFileQueueName")/>
 <#assign fileQueueObj = m1.shareget("fileQueueObj")/>
 
-
 <#assign result = doTask()/>
 <#assign r = m1.stack("return",result)/>
 
@@ -61,9 +60,8 @@
 				, "DO_REQ"
 				, dbxFileQueueName
 			)/>
-			<#if (rs < 0)>
-				<#return rs/>
-			</#if>
+
+			<#return clear/>
 		</#if>
 
 	<#recover>
@@ -86,9 +84,8 @@
 			, "DO_REQ"
 			, dbxFileQueueName
 		)/>
-		<#if (rs < 0)>
-			<#return rs/>
-		</#if>
+
+		<#return clear/>
 	</#attempt>
 
 	<#-- 데이터 파싱이 완료되었다면 템플릿처리 타입에 따라서 처리 진행 -->
@@ -103,23 +100,47 @@
 			<#local r = m1.log(headerMap, "INFO")/>
 			<#local r = m1.log(payloadMap, "INFO")/>
 
-			<#--
-				비즈톡의 경우 POST메서드 요청
-				- body부분의 경우 urlEncoding으로 parameter를 전달해야 정상적으로 처리 됨.
+			<#--  
+				biz센터 템플릿검수 요청
+				- method: POST
+				- header
+					{
+						siteid: 계정ID
+						auth_key: 인증키
+					}
+				- payload
+					{
+						templateCode: 템플릿코드
+						templateName: 템플릿명
+						templateContent: 본문내용
+						templateMessageType: 템플릿메시지 유형(BA: 기본형(default), EX: 부가 정보형, AD: 채널 추가형, MI: 복합형)
+						templateEmphasizeType: 템플릿 강조 유형 (NONE: 선택안함(default), TEXT: 강조표기형)
+						categoryCode: 카테고리 코드
+						...
+					}
+				- 인자값
+					commonFunction_requestHttp4ResultMap(_requestUrl, _methodType, _headerMap, _urlParamMap, _payloadMap, _uploadFileMap)
 			-->
-			<#assign httpResponse = httpRequest.requestHttp(requestUrl, "POST", headerMap, {}, payloadMap, {}, false)/>
+			<#local responseData = commonFunction_requestHttp4ResultMap(requestUrl, "POST", headerMap, {}, payloadMap, {})/>
+			<#local responseCode = responseData.code/>
+			<#if responseCode != "200">
+				<#--  검수요청 실패. 실패에 대한 파일큐쓰기 처리  -->
+				<#local rs = commonFunction_error2writeFileQ(
+					fileQueueObj
+					, seqLocal
+					, responseCode
+					, "템플릿등록처리 중 에이전트 에러. @에러메시지=[${responseData.message!''}]"
+					, "DO_REQ"
+					, dbxFileQueueName
+				)/>
 
-			<#assign responseCode = httpResponse.getResponseCode()/>
-			<#assign succBody = httpResponse.getBody()/>
-			<#assign errBody = httpResponse.getErrorBody()/>
+				<#return clear/>
 
-			<#if responseCode != 200 && errBody != "">
-				<#assign httpResponseBody = errBody/>
 			<#else>
-				<#assign httpResponseBody = succBody/>
+				<#local httpResponseBody = responseData.data!{}/>
 			</#if>
 
-			<#--  RBC에서 응답받은 전문을 파싱  -->
+			<#--  biz센터에서 응답받은 전문을 파싱  -->
 			<#local values = taskDoRequestFunction_parseResponseData(seqLocal, payloadMap, httpResponseBody)/>
 
 			<#local r = m1.log("[REQ][DO][CREATE][SUCC] 템플릿 검수요청 완료. @SEQ=[${seqLocal}]", "INFO")/>
@@ -151,9 +172,8 @@
 				, "DO_REQ"
 				, dbxFileQueueName
 			)/>
-			<#if (rs < 0)>
-				<#return rs/>
-			</#if>
+
+			<#return clear/>
 		</#attempt>
 		
 	</#if>

@@ -1,15 +1,21 @@
+<#--
+    함수목록
+        - taskDoRequestFunction_getCreateTemplateUrl: 템플릿등록요청 URL 정의 함수
+        - taskDoRequestFunction_parseRequestData: 비즈톡센터 요청전문 파싱 함수
+        - taskDoRequestFunction_parseResponseData: 비즈톡센터에서 응답받은 전문을 파싱 함수
+-->
 
-
+<#--  템플릿등록요청 URL 정의 함수  -->
 <#function taskDoRequestFunction_getCreateTemplateUrl>
 
-    <#--  템플릿등록요청 URL 정의  -->
+    <#--  API버전이 분리되어 있지 않아서 고정으로 URL정의  -->
     <#local tmplMngrUrl = m1.shareget("tmplMngrUrl")!""/>
     <#local createTemplateUrl = "${tmplMngrUrl}/template/create"/>
 
     <#return createTemplateUrl/>
 </#function>
 
-<#--  비즈톡센터 요청전문 파싱  -->
+<#--  비즈톡센터 요청전문 파싱 함수  -->
 <#function taskDoRequestFunction_parseRequestData _seqLocal _rcvBody>
 
     <#if _rcvBody?size == 0>
@@ -64,7 +70,7 @@
 
 </#function>
 
-<#--  비즈톡센터에서 응답받은 전문을 파싱  -->
+<#--  비즈톡센터에서 응답받은 전문을 파싱 함수  -->
 <#--
     성공
 {

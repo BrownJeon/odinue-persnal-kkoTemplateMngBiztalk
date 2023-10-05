@@ -61,7 +61,8 @@
 			<#local r = m1.log(request, "DEBUG")/>
 
 			<#-- polling데이터 파일큐 쓰기 -->
-			<#local fret = commonFunction_writeFileQueue4N(fileQueueObj, request, "PL_REQ", requestFileQueueName)/>
+			<#--  <#local fret = commonFunction_writeFileQueue4N(fileQueueObj, request, "PL_REQ", requestFileQueueName)/>  -->
+			<#local fret = commonFunction_writeFileQueue4one(fileQueueObj, request, "PL_REQ", requestFileQueueName)/>
 
 			<#if (fret < 0)>
 				<#local r = m1.log("[REQ][WRITE][ERR] 파일큐 쓰기 실패. 프로세스종료... r=[${fret}]","FATAL")/>

@@ -78,6 +78,7 @@
 
 </#function>
 
+
 <#--  biz센터에서 조회된 결과에 대한 DBX파일큐 쓰기 함수  -->
 <#function taskPollResultFunction_templateStatus2Db _seqLocal _apiResult>
 
@@ -121,7 +122,8 @@
             <#local writeFileQueueBytes=m1.toJsonBytes(writeFileQueueMap)/>
 
             <#--승인이나 반려시에 DBX큐에 데이터를 적재-->
-            <#local fret = commonFunction_writeFileQueue4N(fileQueueObj, writeFileQueueMap, "PL_RPT", dbxFileQueueName)/>
+            <#--  <#local fret = commonFunction_writeFileQueue4N(fileQueueObj, writeFileQueueMap, "PL_RPT", dbxFileQueueName)/>  -->
+            <#local fret = commonFunction_writeFileQueue4one(fileQueueObj, writeFileQueueMap, "PL_RPT", dbxFileQueueName)/>
 
             <#if (fret < 0)>
                 <#local r = m1.log("[REQ][WRITE][ERR] 파일큐 쓰기 실패. 프로세스종료... r=[${fret}]","FATAL")/>
