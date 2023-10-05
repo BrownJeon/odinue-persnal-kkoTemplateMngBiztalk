@@ -122,7 +122,6 @@
             <#local writeFileQueueBytes=m1.toJsonBytes(writeFileQueueMap)/>
 
             <#--승인이나 반려시에 DBX큐에 데이터를 적재-->
-            <#--  <#local fret = commonFunction_writeFileQueue4N(fileQueueObj, writeFileQueueMap, "PL_RPT", dbxFileQueueName)/>  -->
             <#local fret = commonFunction_writeFileQueue4one(fileQueueObj, writeFileQueueMap, "PL_RPT", dbxFileQueueName)/>
 
             <#if (fret < 0)>

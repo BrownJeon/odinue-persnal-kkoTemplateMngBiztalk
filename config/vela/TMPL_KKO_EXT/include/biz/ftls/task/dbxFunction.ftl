@@ -1,6 +1,3 @@
-<#-- 템플릿요청 공통함수 -->
-<#--  <#include "../../../request.include_function.ftl"/>  -->
-
 <#--
     함수목록
         - taskDbxFunction_parseRequest2ExecuteParamMap: 검수요청 DB처리 전문 파싱 함수

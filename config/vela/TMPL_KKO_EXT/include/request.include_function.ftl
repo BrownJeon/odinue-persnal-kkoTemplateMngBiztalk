@@ -5,7 +5,6 @@
 함수목록
 	- commonFunction_getClientInfo: DB에서 조회한 발신프로필키정보를 통해서 인증에 필요한 정보 세팅
 	- commonFunction_writeFileQueue4one : 파일큐에 1건 적재하는 함수
-	- commonFunction_writeFileQueue4N (deprecated): 파일큐에 다건 적재하는 함수
 	- commonFunction_error2writeFileQ : 에러큐에 전문을 쓰는 함수
 		- innerFunction_flattenFileQueueData : 파일큐에 적재할 전문 생성하는 함수
 	- commonFunction_requestGet4ResultList : biz센터 GET요청 후 결과전문 목록 파싱 함수
@@ -60,41 +59,6 @@
 
     <#else>
         <#local r = m1.log("[FQ][WRITE][ERR] 파일큐 쓰기 실패. 프로세스종료... r=[${fret}]","FATAL")/>
-
-        <#return systemExit/>
-    </#if>
-</#function>
-
-<#--  파일큐에 다건 적재하는 함수  -->
-<#--  deprecated  -->
-<#function commonFunction_writeFileQueue4N _fq _bodyMap _procName _targetFileQueueName>
-    <#--return(1: 처리, -9:시스템 종료)-->
-    <#local clear = 1/>
-    <#local systemExit = -9/>
-
-    <#if !_bodyMap?has_content>
-	    <#local r = m1.log("[FQ][WRITE][ERROR] 처리전문 없음. ", "ERROR")/>
-	    <#local r = m1.log(_bodyMap, "ERROR")/>
-
-        <#return systemExit/>
-    </#if>
-
-    <#local rsByteSequence = innerFunction_flattenFileQueueData(_bodyMap, _procName, _targetFileQueueName)/>
-
-	<#local fret = _fq.writeN(_targetFileQueueName, 0, [rsByteSequence])/>
-    <#if (fret == 0)>
-        <#local r = m1.log("[FQ][WRITE][SUCC] 파일큐 쓰기 완료. @발송서버접수식별자=[${_bodyMap.TM_SEQ}]", "INFO")/>
-    	<#local r = m1.log(header, "DEBUG")/>
-        <#local r = m1.log(rsByteSequence, "DEBUG")/>
-
-        <#local r = _fq.readCommit()/>
-
-        <#return clear/>
-
-    <#else>
-        <#local r = m1.log("[FQ][WRITE][ERR] 파일큐 쓰기 실패. 프로세스종료... r=[${fret}]","FATAL")/>
-
-        <#local r = _fq.readRollback()/>
 
         <#return systemExit/>
     </#if>
