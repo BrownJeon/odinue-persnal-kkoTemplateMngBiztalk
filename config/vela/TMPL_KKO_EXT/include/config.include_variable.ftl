@@ -88,17 +88,9 @@
     <#assign r=m1.shareput("authYn",authYn)/>
 </#if>
 
-<#-- 동기화여부 -->
+<#-- 템플릿 동기화여부 -->
 <#assign syncTemplateYn = m1.shareget("syncTemplateYn")!""/>
 <#if !syncTemplateYn?has_content>
     <#assign syncTemplateYn = m1props.getProperty("templateManage.api.syncTemplateYn", "n")?trim/>
     <#assign r=m1.shareput("syncTemplateYn",syncTemplateYn)/>
-</#if>
-
-<#-- API목록 -->
-<#--  템플릿 단건 조회  -->
-<#assign selectTemplateOne = m1.shareget("selectTemplateOne")!""/>
-<#if !selectTemplateOne?has_content>
-    <#assign selectTemplateOne = m1props.getProperty("templateManage.api.url.selectTemplateOne", "")?trim/>
-    <#assign r=m1.shareput("selectTemplateOne",selectTemplateOne)/>
 </#if>

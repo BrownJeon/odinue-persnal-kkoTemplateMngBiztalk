@@ -5,19 +5,7 @@
 <#assign m1home = m1.sysenv["M1_HOME"]/>
 <#assign r = m1.loadffdef("${m1home}/config/vela-mdefs/M1.def") />
 
-<#-- api baseURL 설정 -->
-<#assign tmplMngrUrl = m1.shareget("tmplMngrUrl")/>
-<#--  템플릿 단건조회 api  -->
-<#assign selectTemplateOne = m1.shareget("selectTemplateOne")/>
-
-
-<#-- 승인템플릿 존재여부 조회 쿼리 -->
-<#assign selectKkoTemplateQuery = m1.loadText("include/biz/sql/mng/kkoTemplateSyncQuery/selectKkoTemplate.sql")!""/>
-
-<#-- 승인템플릿 동기화처리 쿼리 -->
-<#assign insertKkoTemplateQuery =  m1.loadText("include/biz/sql/mng/kkoTemplateSyncQuery/insertKkoTemplate.sql")!""/>
-
-<#--  브랜드정보 조회 쿼리  -->
+<#--  발신프로필정보 조회 쿼리  -->
 <#assign selecProfileKeyInfoQuery = m1.loadText("include/biz/sql/common/selecProfileKeyInfo.sql")!""/>
 
 <#-- SQL객체 정의 -->
@@ -77,84 +65,18 @@
 
 <#assign r = m1.shareput("profileKeyInfoMap", profileKeyInfoMap)/>
 
+<#assign r = sqlConn.close()/>
+
+
+<#--  토큰발급 처리  -->
+<#assign authYn = m1.shareget("authYn")/>
+<#if authYn?upper_case == "Y">
+    <#--  비즈톡의 경우 토큰을 사용하지 않고 사전에 발급받은 인증정보를 사용하여 api요청으로 인해 토큰발급 불필요  -->
+</#if>
+
 
 <#-- 템플릿 동기화 기능 -->
-<#list profileKeyInfoMap as profileKey, clientInfo>
-
-    <#assign kkoTemplateSyncParamMap = m1.editable({})/>
-
-    <#assign clientId = clientInfo.clientId!""/>
-    <#assign clientSecret = clientInfo.clientSecret!""/>
-
-    <#assign authYn = m1.shareget("authYn")!"n"/>
-    <#if authYn?upper_case == "N">
-        <#assign r = m1.log("[TMPL][INIT] 인증 미사용으로 인한 인증처리 없음.", "DEBUG")/>
-
-    <#elseif authYn?upper_case == "Y">
-        <#--
-            프로세스 기동시 최초 토큰발급 처리
-        -->
-        <#assign r = m1.log("="?left_pad(80, "="), "INFO")/>
-        <#assign r = m1.log("[INIT][TOKEN][CREATE][START] 토큰발급 시작. @발신프로필키=[${profileKey}] @clientId=[${clientId}] @clientSecret=[${clientSecret}]", "INFO")/>
-        <#assign tokenInfo = commonFunction_requestTokenInfo({
-            "clientId": clientId
-            , "clientSecret": clientSecret
-        })/>
-
-        <#if tokenInfo?has_content && tokenInfo.code == "200">
-            <#assign r = m1.shareput(profileKey, tokenInfo)/>
-
-            <#assign r = m1.log("[INIT][TOKEN][CREATE][SUCC] 토큰정보 발급. @토큰정보=[${m1.toJsonBytes(tokenInfo!{})}]", "INFO")/>
-        <#else>
-            <#assign r = m1.log("[INIT][TOKEN][CREATE][ERR] 토큰정보 없음. 프로세스 종료.", "ERROR")/>
-
-            <#break/>
-
-        </#if>
-
-        <#assign r = kkoTemplateSyncParamMap.put("token", tokenInfo.accessToken!"")/>
-
-    <#else>
-        <#assign r = m1.log("[INIT][ERR] 인증사용여부 비정상 값유입. 설정값은 Y / N으로 설정가능합니다. @suthYn=[${authYn}]", "ERROR")/>
-    </#if>
-
-
-    <#assign syncTemplateYn = m1.shareget("syncTemplateYn")!"n"/>
-    <#if syncTemplateYn?upper_case == "N">
-        <#assign r = m1.log("[TMPL][INIT] 동기화기능 미사용으로 인한 동기화처리 없음.", "DEBUG")/>
-
-    <#elseif syncTemplateYn?upper_case == "Y">
-        <#--  
-            RBC 템플릿 동기화처리
-                - 승인된 템플릿을 기준으로 동기화처리
-        -->
-        <#assign r = m1.log("="?left_pad(40, "=") + " 승인/승인대기 템플릿 동기화처리 시작." + "="?left_pad(40, "="), "INFO")/>
-
-        <#assign r = kkoTemplateSyncParamMap.merge({
-            "sqlConn": sqlConn
-            , "query": {
-                "selectQuery": selectKkoTemplateQuery
-                , "insertQuery": insertKkoTemplateQuery
-            }
-            , "requestUrl": "${tmplMngrUrl}/${selectTemplateOne}"
-        }, "true")/>
-
-        <#assign resultMap = commonFunction_kko2dbSync("KKO_TMPL", kkoTemplateSyncParamMap)/>
-        
-        <#if resultMap?has_content && resultMap.code == "200">
-            <#assign r = m1.log("[RBC][SYNC][TMPL][SUCC] 승인/승인대기 동기화 성공.", "INFO")/>
-        
-        <#else>
-            <#assign r = m1.log("[RBC][SYNC][TMPL][FAIL] 승인/승인대기 동기화 실패.", "ERROR")/>
-
-        </#if>
-
-        <#assign r = m1.log("="?left_pad(40, "=") + " 승인/승인대기 템플릿 동기화처리 완료." + "="?left_pad(40, "="), "INFO")/>
-
-    <#else>
-        <#assign r = m1.log("[INIT][ERR] 동기화사용여부 비정상 값유입. 설정값은 Y / N으로 설정가능합니다. @syncTemplateYn=[${syncTemplateYn}]", "ERROR")/>
-    </#if>
-
-</#list>
-
-<#assign r = sqlConn.close()/>
+<#assign syncTemplateYn = m1.shareget("syncTemplateYn")/>
+<#if syncTemplateYn?upper_case == "Y">
+    <#--  비즈톡의 경우 템플릿목록 조회가 불가하여 비즈톡센터에 등록되어 있는 템플릿을 조회할 수 없어서 동기화기능 미지원  -->
+</#if>
