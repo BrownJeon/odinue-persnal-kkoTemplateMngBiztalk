@@ -5,7 +5,7 @@
 <#assign sqlConn = m1.new("sql")/>
 
 <#--  발신프로필정보를 조회하여 인증에 필요한 정보 세팅  -->
-<#assign channelList = commonFunction_getProfileKeyInfoMap()/>
+<#assign channelList = commonFunction_getProfileKeyInfoMap(sqlConn)/>
 <#assign r = m1.shareput("channelList", channelList)/>
 
 <#assign r = sqlConn.close()/>
