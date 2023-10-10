@@ -55,31 +55,6 @@
     <#assign r = m1.shareput("httpRequest", httpRequest)/>
 </#if>
 
-<#-- 템플릿등록 계정 목록 -->
-<#assign channelList = m1.shareget("channelList")!m1.editable({})/>
-<#if !channelList?has_content>
-    <#assign channelListString = m1props.getProperty("templateManage.api.channelList", "")?trim/>
-
-    <#assign channelInfoList = channelListString?split(",")/>
-    <#list channelInfoList as channelString>
-        <#assign r = m1.log("[TMPL][INIT] @채널목록=[${channelString}]","INFO")/>
-        <#assign channelInfo = channelString?split("*^*")/>
-
-        <#assign profileKey = channelInfo[0]!""/>
-        <#if profileKey != "">
-            <#assign r = channelList.put(profileKey, {
-                    "clientId":channelInfo[1]!"",
-                    "clientSecret":channelInfo[2]!""
-                }
-            )/>
-        </#if>
-
-    </#list>
-    <#assign r = m1.log(channelList,"DEBUG")/>
-
-    <#assign r=m1.shareput("channelList",channelList)/>
-</#if>
-
 
 <#-- 인증여부 -->
 <#assign authYn = m1.shareget("authYn")!""/>
@@ -93,4 +68,14 @@
 <#if !syncTemplateYn?has_content>
     <#assign syncTemplateYn = m1props.getProperty("templateManage.api.syncTemplateYn", "n")?trim/>
     <#assign r=m1.shareput("syncTemplateYn",syncTemplateYn)/>
+</#if>
+
+
+<#--  SQL쿼리문 로딩  -->
+<#--  인증정보테이블에서 발신프로필정보 조회  -->
+<#assign selecProfileKeyInfoQuery = m1.shareget("selecProfileKeyInfoQuery")!""/>
+<#if !selecProfileKeyInfoQuery?has_content>
+    <#assign selecProfileKeyInfoQuery = m1.loadText("biz/sql/common/selecProfileKeyInfo.sql")!""/>
+
+    <#assign r=m1.shareput("selecProfileKeyInfoQuery",selecProfileKeyInfoQuery)/>
 </#if>

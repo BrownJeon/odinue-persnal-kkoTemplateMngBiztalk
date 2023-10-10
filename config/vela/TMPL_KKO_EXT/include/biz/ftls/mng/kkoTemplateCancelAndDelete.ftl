@@ -18,7 +18,7 @@
     <#assign r = m1.log("[TMPL][DELETE][START] 알림톡 템플릿 삭제작업 시작....", "INFO")/>
 
     <#--  API-KEY 정보를 가져다가 브랜드ID목록 세팅  -->
-    <#assign channelList = m1.shareget("channelList")!{}/>
+    <#assign channelList = commonFunction_getProfileKeyInfoMap(sqlConn)/>
     <#if !channelList?has_content>
         <#assign r = m1.log("[TMPL][DELETE][ERR] 발신프로필정보 없음.... 처리 종료.", "ERROR")/>
 

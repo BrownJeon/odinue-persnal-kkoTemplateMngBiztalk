@@ -3,7 +3,7 @@
 
 <#--
 함수목록
-	- commonFunction_getClientInfo: DB에서 조회한 발신프로필키정보를 통해서 인증에 필요한 정보 세팅
+	- commonFunction_getProfileKeyInfoMap: 인증정보 테이블에서 데이터를 조회하여 발신프로필정보 세팅하는 함수
 	- commonFunction_writeFileQueue4one : 파일큐에 1건 적재하는 함수
 	- commonFunction_error2writeFileQ : 에러큐에 전문을 쓰는 함수
 		- innerFunction_flattenFileQueueData : 파일큐에 적재할 전문 생성하는 함수
@@ -22,16 +22,86 @@
 <#assign ymd=ymdhms?substring(0,8)/>
 
 
-<#--  발신프로필키정보 세팅  -->
-<#function commonFunction_getClientInfo _profileKeyInfo _authInfo>
-    <#local profileKey = _profileKeyInfo["PROFILE_KEY"]!""/>
+<#--  인증정보 테이블에서 데이터를 조회하여 발신프로필정보 세팅  -->
+<#function commonFunction_getProfileKeyInfoMap _sqlConn>
 
-    <#return {  
-		"clientId": _authInfo.clientId!""
-		, "clientSecret": _authInfo.clientSecret!""
-    }/>
+    <#--  발신프로필정보 조회 쿼리  -->
+    <#local selecProfileKeyInfoQuery = m1.shareget("selecProfileKeyInfoQuery")!""/>
 
+    <#local profileKeyInfoMap = m1.editable({})/>
+
+    <#--  발신프로필정보를 조회하여 인증에 필요한 정보 세팅  -->
+    <#local r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 DB조회.", "INFO")/>
+
+    <#local profileKeyInfoRs = _sqlConn.query2array(selecProfileKeyInfoQuery, {})/>
+    <#if (profileKeyInfoRs?size > 0)>
+        <#list profileKeyInfoRs as profileKeyInfo>
+            <#if !profileKeyInfo?has_content>
+                <#local r = m1.log("[INIT][CHANNEL_ID][ERR] 조회된 데이터 없음.", "ERROR")/>
+            </#if>
+            
+            <#local profileKey = profileKeyInfo["CHANNEL_ID"]/>
+            <#local clientId = profileKeyInfo["AUTH_ID"]/>
+            <#local clientSecret = profileKeyInfo["AUTH_KEY"]/>
+
+            <#local expireYn = profileKeyInfo["EXPIRE_YN"]!"N"/>
+            <#if expireYn?has_content && expireYn?upper_case == "Y">
+                <#local r = m1.log("[INIT][CHANNEL_ID][EXPIRED] 차단상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
+                <#break/>
+            </#if>
+
+            <#local rejectYn = profileKeyInfo["REJECT_YN"]!"N"/>
+            <#if  rejectYn?has_content && rejectYn?upper_case == "Y">
+                <#local r = m1.log("[INIT][CHANNEL_ID][REJECT] 휴면상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
+                <#break/>
+            </#if>
+
+            <#--  발신프로필키정보 세팅  -->
+            <#local r = profileKeyInfoMap.put(profileKey, {
+                "clientId": clientId
+                , "clientSecret": clientSecret
+            })/>
+
+        </#list>
+        <#local r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 세팅 완료. ", "INFO")/>
+
+    <#else>
+        <#local r = m1.log("[INIT][CHANNEL_ID] DB에 발신프로필정보 없음. properties파일에 설정된 인증정보로 발신프로필정보 세팅....", "INFO")/>
+
+        <#local channelListString = m1props.getProperty("templateManage.api.channelList", "")?trim/>
+
+        <#if channelListString != "">
+            <#local channelInfoList = channelListString?split(",")/>
+            <#list channelInfoList as channelString>
+                <#local r = m1.log("[INIT] properties파일 설정 로딩. @채널목록=[${channelString}]","INFO")/>
+                <#local channelInfo = channelString?split("*^*")/>
+
+                <#local profileKey = channelInfo[0]!""/>
+                <#if profileKey != "">
+                    <#local r = profileKeyInfoMap.put(profileKey, {
+                            "clientId": channelInfo[1]!"",
+                            "clientSecret": channelInfo[2]!""
+                        }
+                    )/>
+                </#if>
+
+            </#list>
+
+            <#local r = m1.log("[INIT][CHANNEL_ID] properties파일을 통한 발신프로필정보 세팅 완료.", "INFO")/>
+        <#else>
+            <#local r = m1.log("[INIT][ERR] properties파일 설정 없음.", "INFO")/>
+
+        </#if>
+
+    </#if>
+    <#local r = m1.log(profileKeyInfoMap, "INFO")/>
+
+	<#local r = _sqlConn.close(profileKeyInfoRs)/>
+
+    <#return profileKeyInfoMap/> 
+	
 </#function>
+
 
 <#-- 파일큐에 1건 적재하는 함수 -->
 <#function commonFunction_writeFileQueue4one _fq _bodyMap _procName _targetFileQueueName>
