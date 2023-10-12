@@ -4,9 +4,19 @@
 <#-- SQL객체 정의 -->
 <#assign sqlConn = m1.new("sql")/>
 
+<#--  프로세스 중지여부. TASK처리 중 에러 발생시 프로세스 중지를 위한 flag  -->
+<#assign isStop = false/>
+
 <#--  발신프로필정보를 조회하여 인증에 필요한 정보 세팅  -->
-<#assign channelList = commonFunction_getProfileKeyInfoMap(sqlConn)/>
-<#assign r = m1.shareput("channelList", channelList)/>
+<#assign profileKeyInfoMap = commonFunction_getProfileKeyInfoMap(sqlConn)/>
+
+<#assign responseCode = profileKeyInfoMap.code!"999"/>
+<#if responseCode == "200">
+    <#assign channelList = profileKeyInfoMap.data!{}/>
+    <#assign r = m1.shareput("channelList", channelList)/>
+<#else>
+    <#assign isStop = true/>
+</#if>
 
 <#assign r = sqlConn.close()/>
 
@@ -26,3 +36,5 @@
     <#assign r = commonFunction_templateSync2Database()/>
 
 </#if>
+
+<#assign r = m1.shareput("isStop", isStop)/>

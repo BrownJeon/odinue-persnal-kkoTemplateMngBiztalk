@@ -1,7 +1,0 @@
-SELECT 
-    TEMPLATE_ID 
-FROM 
-    M1_TEMPLATE_MST 
-WHERE 
-    APPROVAL_STATUS = @검수상태 
-    AND APPROVAL_CODE = @검수결과코드

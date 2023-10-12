@@ -11,9 +11,17 @@
 
 <#assign updateTemplateStatusQuery = m1.session("updateTemplateStatusQuery")/>
 
-<#assign stackValue = doTask()/>
+<#--  프로세스 중지여부  -->
+<#assign isStop = m1.shareget("isStop")!false/>
+
+<#if !isStop>
+	<#assign stackValue = doTask()/>
+<#else>
+    <#assign stackValue = -9/>
+</#if>
 
 <#assign r = m1.stack("return", stackValue)/>
+
 <#assign r = sqlConn.close()/>
 
 <#function doTask>

@@ -32,9 +32,6 @@
 
     <#local profileKeyInfoMap = m1.editable({})/>
 
-	<#local resultCode = "200"/>
-	<#local resultMessage = "성공"/>
-
     <#--  발신프로필정보를 조회하여 인증에 필요한 정보 세팅  -->
     <#local r = m1.log("[INIT][CHANNEL_ID] 발신프로필정보 DB조회.", "INFO")/>
 
@@ -51,19 +48,13 @@
 
             <#local expireYn = profileKeyInfo["EXPIRE_YN"]!"N"/>
             <#if expireYn?has_content && expireYn?upper_case == "Y">
-                <#local r = m1.log("[INIT][CHANNEL_ID][EXPIRED] 차단상태의 발신프로필키. @발신프로필키=[${profileKey}]", "ERROR")/>
-				<#local resultCode = "501"/>
-				<#local resultMessage = "차단상태의 발신프로필키. 발신프로필키=[${profileKey}]"/>
-
+                <#local r = m1.log("[INIT][CHANNEL_ID][EXPIRED] 차단상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
                 <#break/>
             </#if>
 
             <#local rejectYn = profileKeyInfo["REJECT_YN"]!"N"/>
             <#if  rejectYn?has_content && rejectYn?upper_case == "Y">
-                <#local r = m1.log("[INIT][CHANNEL_ID][REJECT] 휴면상태의 발신프로필키. @발신프로필키=[${profileKey}]", "ERROR")/>
-				<#local resultCode = "501"/>
-				<#local resultMessage = "휴면상태의 발신프로필키. 발신프로필키=[${profileKey}]"/>
-
+                <#local r = m1.log("[INIT][CHANNEL_ID][REJECT] 휴면상태의 발신프로필키. @발신프로필키=[${profileKey}]", "INFO")/>
                 <#break/>
             </#if>
 
@@ -102,9 +93,6 @@
         <#else>
             <#local r = m1.log("[INIT][ERR] properties파일 설정 없음.", "INFO")/>
 
-			<#local resultCode = "501"/>
-			<#local resultMessage = "properties파일 설정 없음"/>
-
         </#if>
 
     </#if>
@@ -112,11 +100,7 @@
 
 	<#local r = _sqlConn.close(profileKeyInfoRs)/>
 
-    <#return {
-		"code": resultCode
-		, "message": resultMessage
-		, "data": profileKeyInfoMap
-	}/> 
+    <#return profileKeyInfoMap/> 
 	
 </#function>
 
@@ -350,7 +334,7 @@
 
 	<#assign responseCode = httpResponse.getResponseCode()/>
 	<#assign succBody = httpResponse.getBody()/>
-	<#assign errBody = httpResponse.getErrorBody()/>
+	<#assign errBody = ttpResponse.getErrorBody()/>
 
 	<#if responseCode != 200 && errBody != "">
 		<#assign httpResponseBody = errBody/>

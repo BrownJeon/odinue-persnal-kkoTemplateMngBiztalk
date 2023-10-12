@@ -1,0 +1,12 @@
+{
+    "0000": "요청 성공"
+    ,  "1002": "InvalidHubPartnerKey 인증키가 유효하지 않음"
+    ,  "1004": "MissingRequiredParameterException 필수 파라미터가 없음"
+    ,  "2001": "InvalidImageLengthException 이미지 용량 초과"
+    ,  "2002": "InvalidImageShapeException 발송할 수 없는 이미지 사이즈"
+    ,  "2003": "InvalidImageFormatException 지원하지 않는 이미지 형식"
+    ,  "2004": "FailedToUploadImageException 내부 시스템 오류로 업로드 실패"
+    ,  "403": "권한 없음"
+    ,  "406": "파라미터 오류 잘못된 파라미터"
+    ,  "600": "이미지 업로드 실패(비즈톡 센터 API) 잘못된 이미지 크기,형식 등.."
+}

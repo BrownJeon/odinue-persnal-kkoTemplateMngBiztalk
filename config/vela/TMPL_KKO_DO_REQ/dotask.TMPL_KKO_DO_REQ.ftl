@@ -6,8 +6,16 @@
 <#assign dbxFileQueueName = m1.shareget("dbxFileQueueName")/>
 <#assign fileQueueObj = m1.shareget("fileQueueObj")/>
 
-<#assign result = doTask()/>
-<#assign r = m1.stack("return",result)/>
+<#--  프로세스 중지여부  -->
+<#assign isStop = m1.shareget("isStop")!false/>
+
+<#if !isStop>
+	<#assign stackValue = doTask()/>
+<#else>
+    <#assign stackValue = -9/>
+</#if>
+
+<#assign r = m1.stack("return", stackValue)/>
 
 
 <#function doTask>
