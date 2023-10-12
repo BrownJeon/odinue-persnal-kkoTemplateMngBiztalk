@@ -9,6 +9,7 @@
 <#--  프로세스 중지여부  -->
 <#assign isStop = m1.shareget("isStop")!false/>
 
+<#--  초기 설정 실패시 프로세스 중지를 위해서 TASK 중지 처리.  -->
 <#if !isStop>
 	<#assign stackValue = doTask()/>
 <#else>
