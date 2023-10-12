@@ -4,6 +4,9 @@
 <#--
 함수목록
 	- commonFunction_getProfileKeyInfoMap: 인증정보 테이블에서 데이터를 조회하여 발신프로필정보 세팅하는 함수
+	- commonFunction_getTokenInfo4Memory: biz센터에서 발급받은 토큰정보를 메모리에 등록하는 함수
+	- commonFunction_requestTokenInfo: 채널정보를 받아서 biz센터에 토큰발급받는 함수
+	- commonFunction_templateSync2Database: 템플릿동기화 처리 함수
 	- commonFunction_writeFileQueue4one : 파일큐에 1건 적재하는 함수
 	- commonFunction_error2writeFileQ : 에러큐에 전문을 쓰는 함수
 		- innerFunction_flattenFileQueueData : 파일큐에 적재할 전문 생성하는 함수
@@ -12,8 +15,7 @@
 	- commonFunction_requestHttp4ResultMap : biz센터 요청 후 결과전문 반환해주는 함수
 		- innerFunction_inputValidation: 함수 인자값에 대한 빈값체크 함수
 	- commonFunction_getRequestHeaderMap : HTTP요청을 위한 전문헤더 생성하는 함수
-	- commonFunction_parseCreateTemplatePayloadMap : 템플릿등록 전문바디 파싱
-		- innerFunction_uploadImage : 이미지업로드 요청
+
 -->
 <#--  범용성을 위해서 SQL쿼리에 DBMS 전용 쿼리는 사용하지 않도록 한다.  -->
 
@@ -94,12 +96,87 @@
         </#if>
 
     </#if>
-    <#local r = m1.log(profileKeyInfoMap, "INFO")/>
+    <#local r = m1.log(profileKeyInfoMap, "DEBUG")/>
 
 	<#local r = _sqlConn.close(profileKeyInfoRs)/>
 
     <#return profileKeyInfoMap/> 
 	
+</#function>
+
+
+<#--  
+	biz센터에서 발급받은 토큰정보를 메모리에 등록하는 함수
+	parameter
+		- channelList: {
+			발신프로필키: {
+				"clientId": 인증정보
+				, "clientSecret": 인증키
+			}
+		}
+	return
+		- {
+			"code": 결과코드
+			, "message": 결과내용
+		}
+-->
+<#function commonFunction_getTokenInfo4Memory channelList>
+	<#--  비즈톡의 경우 토큰을 사용하지 않고 사전에 발급받은 인증정보를 사용하여 api요청으로 인해 토큰발급 불필요  -->
+	<#local result = {
+		"code": "600"
+		, "message": "미지원 함수"
+	}/>
+
+	<#return result/>
+</#function>
+
+<#--
+	채널정보를 받아서 biz센터에 토큰발급받는 함수
+	parameter
+		- channelList: {
+			"clientId": 인증정보
+			, "clientSecret": 인증키
+		}
+	return
+		- {
+			"code": 결과코드
+			, "message": 결과내용
+			, "data": {
+				"accessToken": 토큰정보
+				, "expiredIn": 만료시간
+			}
+		}
+-->
+<#function commonFunction_requestTokenInfo channelInfo>
+	<#--  비즈톡의 경우 토큰을 사용하지 않고 사전에 발급받은 인증정보를 사용하여 api요청으로 인해 토큰발급 불필요  -->
+	<#local result = {
+		"code": "600"
+		, "message": "미지원 함수"
+	}/>
+
+	<#return result/>
+
+</#function>
+
+<#--  
+	템플릿동기화 함수  
+		- biz센터의 템플릿정보를 조회하여 DB처리하는 함수
+	parameter
+		- channelList: 
+	return
+		- {
+			"code": 결과코드
+			, "message": 결과내용
+		}
+-->
+<#function commonFunction_templateSync2Database>
+    <#--  비즈톡의 경우 템플릿목록 조회가 불가하여 비즈톡센터에 등록되어 있는 템플릿을 조회할 수 없어서 동기화기능 미지원  -->
+	<#local result = {
+		"code": "600"
+		, "message": "미지원 함수"
+	}/>
+
+	<#return result/>
 </#function>
 
 
@@ -257,7 +334,7 @@
 
 	<#assign responseCode = httpResponse.getResponseCode()/>
 	<#assign succBody = httpResponse.getBody()/>
-	<#assign errBody = httpResponse.getErrorBody()/>
+	<#assign errBody = ttpResponse.getErrorBody()/>
 
 	<#if responseCode != 200 && errBody != "">
 		<#assign httpResponseBody = errBody/>
@@ -288,7 +365,7 @@
 		<#local r = m1.log(channelList, "ERROR")/>
 
 		<#return {
-			"code": "711"
+			"code": "719"
 			, "message": "발신프로필키에 매핑되는 인증정보 없음."
 		}/>
 	</#if>
@@ -333,7 +410,7 @@
 		- 버튼전문의 경우 BUTTON_INFO컬럼의 값을 체크하여 파싱.
 		
 -->
-<#function commonFunction_parseCreateTemplatePayloadMap _requestMap>
+<#function __commonFunction_parseCreateTemplatePayloadMap _requestMap>
 	<#if !_requestMap??>
 		<#local r = m1.log("[REQ][DO][ERR] 데이터 파싱 중 에러발생. 유입데이터 없음.", "ERROR")/>
 
@@ -360,7 +437,7 @@
 		<#local r = m1.log(formParam, "ERROR")/>
 
 		<#return {
-			"code": "710"
+			"code": "711"
 			, "message": "필수정보 전문내용 데이터 파싱중 에러발생."
 		}/>
 	</#attempt>
@@ -373,7 +450,7 @@
 		<#local r = m1.log(buttonInfo, "ERROR")/>
 
 		<#return {
-			"code": "710"
+			"code": "712"
 			, "message": "버튼정보 전문내용 데이터 파싱중 에러발생."
 		}/>
 	</#attempt>
@@ -387,7 +464,7 @@
 		<#local r = m1.log(optionInfo, "ERROR")/>
 
 		<#return {
-			"code": "710"
+			"code": "713"
 			, "message": "옵션내용 전문내용 데이터 파싱중 에러발생."
 		}/>
 	</#attempt>
@@ -406,7 +483,7 @@
 		<#local r = m1.log(formParam, "ERROR")/>
 
 		<#return {
-			"code": "710"
+			"code": "714"
 			, "message": "필수값 [템플릿내용] 없음."
 		}/>
 	</#if>
@@ -416,7 +493,7 @@
 		<#local r = m1.log(formParam, "ERROR")/>
 		
 		<#return {
-			"code": "710"
+			"code": "715"
 			, "message": "필수값 [강조유형] 없음."
 		}/>
 	<#else>
@@ -447,7 +524,7 @@
 
 
 					<#return {
-						"code": "710"
+						"code": "716"
 						, "message": "이미지업로드 실패. [${message}]"
 					}/>
 				</#if>
@@ -499,7 +576,7 @@
 				<#local r = m1.log(optionInfo, "ERROR")/>
 
 				<#return {
-					"code": "710"
+					"code": "717"
 					, "message": "강조유형이 'TEXT'일경우 templateTitle값 필수."
 				}/>
 			</#if>
@@ -509,7 +586,7 @@
 				<#local r = m1.log(optionInfo, "ERROR")/>
 
 				<#return {
-					"code": "710"
+					"code": "718"
 					, "message": "강조유형이 'TEXT'일경우 templateSubtitle값 필수."
 				}/>
 			</#if>
@@ -577,7 +654,7 @@
 		- 제한 사이즈 : 가로 108px 이상, 가로:세로 비율이 1:1
 		- 파일형식 및 크기 : jpg, png / 최대 500KB.
 -->
-<#function innerFunction_uploadImage _requestUploadFileUrl _senderKey _imagePath>
+<#function __innerFunction_uploadImage _requestUploadFileUrl _senderKey _imagePath>
 
 	<#if !_requestUploadFileUrl?? && !_imagePath??>
 		<#local r = m1.log("[${TASKNAME}][UPLOAD][ERR] 이미지업로드 파라미터에러. 파라미터값이 없음. @업로드요청URL=[${_requestUploadFileUrl!''}] @이미지경로=[${_imagePath!''}]", "ERROR") />
