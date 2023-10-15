@@ -59,7 +59,7 @@
 
     <#local r = m1.log("[RPT][POLL] 검수결과 조회 요청. @SEQ=[${_seqLocal}] @템플릿코드=[${templateCode}]", "INFO")/>
 
-    <#local httpResponse = httpRequest.requestHttp("${tmplMngrUrl}/template/search", "GET", headerMap, headerParamMap, {}, {})/>
+    <#local httpResponse = httpRequest.requestHttp("${tmplMngrUrl}/${selectTemplate4OneUrl}", "GET", headerMap, headerParamMap, {}, {})/>
     <#local httpResponseCode = httpResponse.getResponseCode()/>
 
     <#if httpResponseCode != 200>

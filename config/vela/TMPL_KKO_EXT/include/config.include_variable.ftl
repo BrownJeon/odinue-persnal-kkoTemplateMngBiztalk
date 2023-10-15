@@ -19,12 +19,44 @@
     <#assign r = m1.shareput("resultCountFetch", resultCountFetch?number)/>
 </#if>
 
-<#-- KEP baseURL -->
+<#--  URL목록 로딩  -->
+<#-- 요청 baseURL -->
 <#assign tmplMngrUrl = m1.shareget("tmplMngrUrl")!""/>
 <#if !tmplMngrUrl?has_content>
     <#assign tmplMngrUrl = m1props.getProperty("templateManage.api.url", "")?trim/>
     <#assign r=m1.shareput("tmplMngrUrl", tmplMngrUrl)/>
 </#if>
+<#-- 템플릿승인 요청 URL -->
+<#assign createTemplateUrl = m1.shareget("createTemplateUrl")!""/>
+<#if !createTemplateUrl?has_content>
+    <#assign createTemplateUrl = m1props.getProperty("templateManage.api.url.createTemplate", "")?trim/>
+    <#assign r=m1.shareput("createTemplateUrl", createTemplateUrl)/>
+</#if>
+<#-- 템플릿 이미지업로드 (이미지 / 하이라이트) URL -->
+<#assign uploadImageUrl = m1.shareget("uploadImageUrl")!""/>
+<#if !uploadImageUrl?has_content>
+    <#assign uploadImageUrl = m1props.getProperty("templateManage.api.url.uploadImage", "")?trim/>
+    <#assign r=m1.shareput("uploadImageUrl", uploadImageUrl)/>
+</#if>
+<#-- 템플릿 썸네일 이미지업로드 URL -->
+<#assign uploadHighlightImageUrl = m1.shareget("uploadHighlightImageUrl")!""/>
+<#if !uploadHighlightImageUrl?has_content>
+    <#assign uploadHighlightImageUrl = m1props.getProperty("templateManage.api.url.uploadHighlightImage", "")?trim/>
+    <#assign r=m1.shareput("uploadHighlightImageUrl", uploadHighlightImageUrl)/>
+</#if>
+<#-- 템플릿 단건 조회 URL -->
+<#assign selectTemplate4OneUrl = m1.shareget("selectTemplate4OneUrl")!""/>
+<#if !selectTemplate4OneUrl?has_content>
+    <#assign selectTemplate4OneUrl = m1props.getProperty("templateManage.api.url.selectTemplate", "")?trim/>
+    <#assign r=m1.shareput("selectTemplate4OneUrl", selectTemplate4OneUrl)/>
+</#if>
+<#-- 템플릿 삭제 URL -->
+<#assign deleteTemplateUrl = m1.shareget("deleteTemplateUrl")!""/>
+<#if !deleteTemplateUrl?has_content>
+    <#assign deleteTemplateUrl = m1props.getProperty("templateManage.api.url.deleteTemplate", "")?trim/>
+    <#assign r=m1.shareput("deleteTemplateUrl", deleteTemplateUrl)/>
+</#if>
+
 
 <#-- 큐정보 -->
 <#--  요청 큐  -->
@@ -79,3 +111,4 @@
 
     <#assign r=m1.shareput("selecProfileKeyInfoQuery",selecProfileKeyInfoQuery)/>
 </#if>
+

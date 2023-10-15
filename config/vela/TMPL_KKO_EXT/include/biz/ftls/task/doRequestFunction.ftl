@@ -261,7 +261,7 @@
 			<#if templateImageUrl?has_content>
 				<#--  이미지업로드  -->
 				<#local r = m1.log("[REQ][DO][UPLOAD] 이미지 업로드 처리 요청. @이미지PATH=[${templateImageUrl}]", "INFO")/>
-				<#local uploadResultMap = innerFunction_uploadImage("${tmplMngrUrl}/v1/image/alimtalk/template", senderKey, templateImageUrl)/>
+				<#local uploadResultMap = innerFunction_uploadImage("${tmplMngrUrl}/${uploadImageUrl}", senderKey, templateImageUrl)/>
 
 				<#local uploadResultCode = uploadResultMap.code!"">
 				<#if uploadResultCode == "0000">
@@ -292,7 +292,7 @@
 				<#local highlightImageUrl = optionInfo.templateItemHighlight.imageUrl/>
 				<#local r = m1.log("[{TASKNAME}][UPLOAD] 썸네일 이미지 업로드 처리 요청. @이미지PATH=[${highlightImageUrl}]", "INFO")/>
 
-				<#local highlightUploadImageResponseMap = innerFunction_uploadImage("${tmplMngrUrl}/v1/image/alimtalk/itemHighlight", senderKey, highlightImageUrl)/>
+				<#local highlightUploadImageResponseMap = innerFunction_uploadImage("${tmplMngrUrl}/${uploadHighlightImageUrl}", senderKey, highlightImageUrl)/>
 				<#local highlightUploadImageResCode = highlightUploadImageResponseMap.code/>
 				<#local highlightUploadImageResMessage = highlightUploadImageResponseMap.message/>
 				<#local highlightUploadImageUrl = highlightUploadImageResponseMap.uploadImageUrl/>

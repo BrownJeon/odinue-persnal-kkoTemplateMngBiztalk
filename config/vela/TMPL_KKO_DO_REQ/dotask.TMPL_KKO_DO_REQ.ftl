@@ -49,8 +49,6 @@
 			<#local rcvBody = {}/>
 		</#attempt>
 
-		<#local requestUrl = taskDoRequestFunction_getCreateTemplateUrl()/>
-
 		<#--  검수요청 전문 파싱 함수  -->
 		<#local requestDataMap = taskDoRequestFunction_parseRequestData(seqLocal, rcvBody)/>
 		<#local rsCode = requestDataMap.code/>
@@ -79,17 +77,12 @@
 		<#local r = m1.log("[REQ][DO][FAIL] 데이터 파싱처리 중 에러. @SEQ=[${seqLocal}] @유입전문=[${received?string}]", "ERROR")/>
 		<#local r = m1.log(.error, "ERROR")/>
 
-		<#local errorMsg = .error />
-		<#if (errorMsg?length > 200)>
-			<#local errorMsg = errorMsg?substring(0,200)/>
-		</#if>
-
 		<#-- 실패처리  -->
 		<#local rs = commonFunction_error2writeFileQ(
 			fileQueueObj
 			, seqLocal
 			, "501"
-			, "[M1] 템플릿등록처리 중 데이터 파싱 에러 발생. @에러메시지=[${errorMsg}]"
+			, "[M1] 템플릿등록처리 중 데이터 파싱 에러 발생. @에러메시지=[${.error}]"
 			, "DO_REQ"
 			, dbxFileQueueName
 		)/>
@@ -104,6 +97,8 @@
 			<#-- 검수요청 전문 정의 -->
 			<#local headerMap = requestDataMap.headerMap!{}/>
 			<#local payloadMap = requestDataMap.payloadMap!{}/>
+
+			<#local requestUrl = "${tmplMngrUrl}/${createTemplateUrl}"/>
 
 			<#local r = m1.log("[REQ][DO][CREATE] 템플릿검수 요청. @SEQ=[${seqLocal}] @발신프로필키=[${rcvBody.CHANNEL_ID!''}] @템플릿ID=[${rcvBody.TEMPLATE_ID!''}] @요청URL=[${requestUrl}]", "INFO")/>
 			<#local r = m1.log(headerMap, "INFO")/>
@@ -134,6 +129,7 @@
 			<#local responseCode = responseData.code/>
 			<#if responseCode != "200">
 				<#--  검수요청 실패. 실패에 대한 파일큐쓰기 처리  -->
+
 				<#local rs = commonFunction_error2writeFileQ(
 					fileQueueObj
 					, seqLocal
@@ -167,17 +163,12 @@
 			<#local r = m1.log("[REQ][DO][CREATE][REQ][FAIL] 템플릿등록처리 중 에러. @SEQ=[${seqLocal}]", "FATAL")/>
 			<#local r = m1.log(.error, "ERROR")/>
 
-			<#local errorMsg = .error />
-			<#if (errorMsg?length > 200)>
-				<#local errorMsg = errorMsg?substring(0,200)/>
-			</#if>
-
 			<#-- 실패처리  -->
 			<#local rs = commonFunction_error2writeFileQ(
 				fileQueueObj
 				, seqLocal
 				, "501"
-				, "[M1]템플릿등록처리 중 에러. @에러메시지=[${errorMsg}]"
+				, "[M1]템플릿등록처리 중 에러. @에러메시지=[${.error}]"
 				, "DO_REQ"
 				, dbxFileQueueName
 			)/>
